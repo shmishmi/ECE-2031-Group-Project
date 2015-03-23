@@ -50,8 +50,8 @@ ARCHITECTURE a OF SCOMP IS
 		EX_OUT2,
 		EX_LOADI,
 		EX_RETI,
-		EX_DIV,
-		EX_MULT
+		EX_MULT,
+		EX_DIV
 	);
 
 	TYPE STACK_TYPE IS ARRAY (0 TO 7) OF STD_LOGIC_VECTOR(9 DOWNTO 0);
@@ -63,6 +63,8 @@ ARCHITECTURE a OF SCOMP IS
 	SIGNAL AC_SAVED     : STD_LOGIC_VECTOR(15 DOWNTO 0);
 	SIGNAL AC_SHIFTED   : STD_LOGIC_VECTOR(15 DOWNTO 0);
 	SIGNAL AC_MULT      : STD_LOGIC_VECTOR(15 DOWNTO 0);
+	SIGNAL AC_QUOTIENT  : STD_LOGIC_VECTOR(15 DOWNTO 0);
+	SIGNAL AC_REMAIN    : STD_LOGIC_VECTOR(15 DOWNTO 0);
 	SIGNAL IR           : STD_LOGIC_VECTOR(15 DOWNTO 0);
 	SIGNAL MDR          : STD_LOGIC_VECTOR(15 DOWNTO 0);
 	SIGNAL PC           : STD_LOGIC_VECTOR( 9 DOWNTO 0);
@@ -142,6 +144,22 @@ BEGIN
 		result => AC_MULT -- Result of megafunction
 	);
 
+	-- Use LPM Divide implementation
+	MEMORY: LPM_DIVIDE
+	GENERIC MAP (
+		lpm_drepresentation => "SIGNED",
+		lpm_hint => "LPM_REMAINDERPOSITIVE=TRUE",
+		lpm_nrepresentation => "SIGNED",
+		lpm_type => "LPM_DIVIDE",
+		lpm_widthd => 16,
+		lpm_widthn => 16
+	)
+	PORT MAP (
+		denom => MDR,
+		numer => AC,
+		quotient => AC_QUOTIENT,
+		remain => AC_REMAIN 	-- not going to use
+	);
 
 	IO_ADDR  <= IR(7 DOWNTO 0);
 
@@ -382,7 +400,7 @@ BEGIN
 					STATE <= FETCH;
 					
 				WHEN EX_DIV =>
-					AC		<= AC / MDR; -- should divide the AC by the number in the memory unit
+					AC 	<= AC_QUOTIENT; -- should divide the AC by the number in the memory unit
 					STATE	<= FETCH;
 
 				WHEN OTHERS =>
