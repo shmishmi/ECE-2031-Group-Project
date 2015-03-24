@@ -50,7 +50,8 @@ ARCHITECTURE a OF SCOMP IS
 		EX_OUT2,
 		EX_LOADI,
 		EX_RETI,
-		EX_DIV
+		EX_DIV,
+		EX_MULT
 	);
 
 	TYPE STACK_TYPE IS ARRAY (0 TO 7) OF STD_LOGIC_VECTOR(9 DOWNTO 0);
@@ -61,6 +62,7 @@ ARCHITECTURE a OF SCOMP IS
 	SIGNAL AC           : STD_LOGIC_VECTOR(15 DOWNTO 0);
 	SIGNAL AC_SAVED     : STD_LOGIC_VECTOR(15 DOWNTO 0);
 	SIGNAL AC_SHIFTED   : STD_LOGIC_VECTOR(15 DOWNTO 0);
+	SIGNAL AC_MULT      : STD_LOGIC_VECTOR(15 DOWNTO 0);
 	SIGNAL IR           : STD_LOGIC_VECTOR(15 DOWNTO 0);
 	SIGNAL MDR          : STD_LOGIC_VECTOR(15 DOWNTO 0);
 	SIGNAL PC           : STD_LOGIC_VECTOR( 9 DOWNTO 0);
@@ -125,6 +127,19 @@ BEGIN
 		data     => AC,
 		enabledt => IO_WRITE_INT,
 		tridata  => IO_DATA
+	);
+	
+	-- Use LPM function to create Multiply
+	MULT : LPM_MULT
+	GENERIC MAP (
+		lpm_widtha => 8,
+		lpm_widthb => 8,
+		lpm_widthp => 16
+	)
+	PORT MAP (
+		dataa => AC(7 DOWNTO 0), -- First number is from accumulator
+		datab => MDR(7 DOWNTO 0),-- Second number is the input
+		result => AC_MULT -- Result of megafunction
 	);
 
 
@@ -241,7 +256,9 @@ BEGIN
 							STATE <= EX_RETI;
 						WHEN "010111" =>       -- LOADI
 							STATE <= EX_LOADI;
-						WHEN "011000" =>  	   -- DIV
+						WHEN "011000" =>		-- MULT
+							STATE <= EX_MULT;
+						WHEN "011001" =>  	   -- DIV
 							STATE <= EX_DIV;
 
 						WHEN OTHERS =>
@@ -359,6 +376,9 @@ BEGIN
 					GIE   <= '1';      -- re-enable interrupts
 					PC    <= PC_SAVED; -- restore saved registers
 					AC    <= AC_SAVED;
+					STATE <= FETCH;
+				WHEN EX_MULT =>
+					AC <= AC_MULT;
 					STATE <= FETCH;
 					
 				WHEN EX_DIV =>
