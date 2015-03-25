@@ -6,6 +6,7 @@ This Project implements code to control DE2Bot.
 
 __Implement arctangent__
 * Agree on Implementation[]
+* Select additional implementation []
 * Write Assembly Code[]
 * Test Assembly Code[]
 
