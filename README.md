@@ -17,4 +17,4 @@ __SCOMP Additions__
 * Test Multiply[]
 * Test Divide []
 
-| ![DE2Bot](http://upcp.ece.gatech.edu/images/2031/DE2BotTop.png "DE2Bot")
+ ![Donut](https://lh4.googleusercontent.com/-3xXcAWENdIA/U5z64AGLjgI/AAAAAAACKLE/iVDWSb99A58/w454-h488/tumblr_lmbq7fyKeu1ql3yfgo1_500.gif "Donut")
