@@ -8,8 +8,8 @@ __Implementation__
 * Select additional implementation 
 
 __Assembly Code__
-* Turn Subroutine
-* Atan Subroutine
+* ~~Turn Subroutine~~
+* ~~Atan Subroutine~~
 * Test Assembly Code
 
 
