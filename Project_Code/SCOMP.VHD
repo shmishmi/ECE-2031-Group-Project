@@ -50,8 +50,8 @@ ARCHITECTURE a OF SCOMP IS
 		EX_OUT2,
 		EX_LOADI,
 		EX_RETI,
-		EX_DIV,
-		EX_MULT
+--		EX_MULT,
+		EX_DIV
 	);
 
 	TYPE STACK_TYPE IS ARRAY (0 TO 7) OF STD_LOGIC_VECTOR(9 DOWNTO 0);
@@ -145,7 +145,7 @@ BEGIN
 	);
 
 	-- Use LPM Divide implementation
-	MEMORY: LPM_DIVIDE
+	DIV: LPM_DIVIDE
 	GENERIC MAP (
 		lpm_drepresentation => "SIGNED",
 		lpm_hint => "LPM_REMAINDERPOSITIVE=TRUE",
