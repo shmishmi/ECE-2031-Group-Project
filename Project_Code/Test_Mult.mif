@@ -1,0 +1,22 @@
+-- Altera Memory Initialization File (MIF)
+
+DEPTH = 1024;
+WIDTH = 16;
+
+ADDRESS_RADIX = HEX;
+DATA_RADIX = HEX;
+
+CONTENT
+  BEGIN
+    [000..3FF] : 0000;  -- Default to NOP
+
+           000 : 0404;  -- Start:  LOAD	A
+           001 : 6005;  -- 		MULT	B
+           002 : 4C04;  -- 		OUT 	SEVENSEG
+           003 : 1403;  -- 		JUMP 	Here	
+           004 : 0002;  -- A:      DW      &H0002
+           005 : 0005;  -- B:      DW      &H0005
+           006 : 0002;  -- C:      DW      &H0002	
+           007 : 0000;  -- D:		DW		&H0000
+           008 : 0000;  -- INDATA:		DW		&H00
+  END;
