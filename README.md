@@ -3,14 +3,13 @@ ECE 2031 Team Donuts Project
 This Project implements code to control DE2Bot.
 
 #Current Goals
+__Implementation__
+* Agree on Atan Implementation[]
+* Select additional implementation []
 
 __Assembly Code__
-* Agree on Atan Implementation[]
 * Turn Subroutine[]
 * Atan Subroutine[]
-** Look-Up Table []
-* Select additional implementation []
-* Write Assembly Code[]
 * Test Assembly Code[]
 
 
