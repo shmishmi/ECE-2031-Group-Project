@@ -15,9 +15,9 @@ __Assembly Code__
 
 
 __SCOMP VHDL Code__
-* Add Multiply Megafunction [X] 
-* Add Divide Megafunctions [X]
-* Test Multiply[X]
-* Test Divide [X]
+* ~~Add Multiply Megafunction~~ 
+* ~~Add Divide Megafunctions~~
+* ~~Test Multiply~~
+* ~~Test Divide~~
 
 ![Donut](https://lh4.googleusercontent.com/-3xXcAWENdIA/U5z64AGLjgI/AAAAAAACKLE/iVDWSb99A58/w454-h488/tumblr_lmbq7fyKeu1ql3yfgo1_500.gif "Donut")
