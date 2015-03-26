@@ -3,23 +3,13 @@
 ;Code to Test SCOMP Multiply
 
 
-
 		ORG     &H000
-Start:  CALL    Calc
-		JUMP	START        
-		ORG		&H010
-Calc:	LOAD	A
+Start:  LOAD	A
 		MULT	B
-		STORE	D
-		OUT		SEVENSEG
-		OUT		TIMER
-TCheck: 	IN		TIMER
-			ADDI	-20
-        	JNEG	TCheck
-        LOAD 	D
-		MULT	C
-		OUT 	SEVENSEG	
-		JUMP 	Calc
+		OUT 	SEVENSEG
+Here:	
+		JUMP 	Here	
+
 
 A:      DW      &H0002
 B:      DW      &H0005
