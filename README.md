@@ -5,12 +5,15 @@ This Project implements code to control DE2Bot.
 #Current Goals
 __Implementation__
 * Agree on Atan Implementation
-* Select additional implementation 
+* ~~Select additional implementation~~ 
 
 __Assembly Code__
-* ~~Turn Subroutine~~
+* ~~Turn Implementation~~
 * ~~Atan Subroutine~~
-* Test Assembly Code
+* Turn Subroutine
+* Go to XY Subroutine
+* Error Checking
+* Efficiency
 
 
 
