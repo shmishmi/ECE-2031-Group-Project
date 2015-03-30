@@ -81,13 +81,18 @@ atan:
 ;initialize variables (for repeated calls)
 	LOAD Zero
 	STORE INDEX
+	STORE YBIG
 	ADDI 1
 	STORE quadrant
 
 ;find quadrant
-	LOAD Mask7
+	;Reset Sign Check
+	LOAD MaskSign 
+	AND  Y ; Get sign bit of y
 	STORE signcheck
-
+	;If y is positive go to x
+	;If y is negative take abs. value,
+	;and go to quad 3 (because y is negative in quad 3).
 	LOAD Y 
 	JPOS quadx
 	LOAD Zero
@@ -98,13 +103,15 @@ atan:
 
 quadx:
 	LOAD X
-	AND Mask7
-	XOR signcheck
-	JZERO checkx
-	LOAD One
+	AND MaskSign ;Get sign of x
+	XOR signcheck ;Check to see if sign of y and x are the same
+	;Figure out quadrant
+	JZERO checkx ; x and y are both the same sign
+	LOAD One ; different signs add one to quadrant
 	ADD quadrant 
 	STORE quadrant
-
+;Make x positive if not already
+;Needed for actual function
 checkx:
 	LOAD X
 	JPOS compxy
@@ -113,11 +120,14 @@ checkx:
 	STORE X
 
 ;switch x and y if y is bigger
+;
 compxy:
 	LOAD Y
 	SUB X
-
-	JNEG findindex
+	
+	JNEG findindex ;If x is bigger move to atan subroutine
+	;Switch X and Y if Y is bigger
+	;Need for 90 - atan(x/y)
 	LOAD One
 	STORE YBIG
 	LOAD X
@@ -131,14 +141,14 @@ findindex:
 	LOAD Y
 	SHIFT 11
 	DIV X
-	STORE yoverx
+	STORE yoverx   ;yoverx = floor(y*2048/x)
 ;from division scaled up by 2048, find table index 
 ;gets the value at the index
 	load index
 	
 indexloop: 
 	;scale by 2048
-	SHIFT 5   ;shift 6 is multiply by scale (2048) and divide by n-1 (64)
+	SHIFT 5   ;shift 5 is multiply by scale (2048) and divide by n-1 (64)
 	SUB yoverx
 	;if yoverx bigger (AC negative) increment index and continue
 	JNEG cont
@@ -148,7 +158,8 @@ indexloop:
 	STORE index
 	ILOAD index
 	STORE ATANTEMP
-
+	
+	;Check if Y was bigger
 	LOAD YBIG
 	JZERO quadcalc
 
@@ -156,7 +167,10 @@ indexloop:
 	SUB ATANTEMP
 	STORE ATANTEMP
 
+;Find the correct quadrant
+;Adjust value accordingly
 quadcalc:
+	;Angle = atantemp
 	LOAD quadrant
 	ADDI -1
 	JPOS qtwo
@@ -164,6 +178,7 @@ quadcalc:
 	JUMP done
 
 qtwo:
+	;Angle = 180 - atan(y/x)
 	ADDI -1
 	JPOS qthree
 	LOAD Deg180
@@ -171,6 +186,7 @@ qtwo:
 	JUMP done
 
 qthree:
+	;Angle = 180 + atantemp
 	ADDI -1
 	JPOS qfour
 	LOAD Deg180
@@ -178,6 +194,7 @@ qthree:
 	JUMP done
 
 qfour:
+	;Angle = 360 - atantemp
 	LOAD Deg360
 	SUB ATANTEMP
 
@@ -385,6 +402,7 @@ Mask4:    DW &B00010000
 Mask5:    DW &B00100000
 Mask6:    DW &B01000000
 Mask7:    DW &B10000000
+MaskSign: DW &H8000
 LowByte:  DW &HFF      ; binary 00000000 1111111
 LowNibl:  DW &HF       ; 0000 0000 0000 1111
 
