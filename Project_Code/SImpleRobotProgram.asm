@@ -57,15 +57,7 @@ ADDI 1
 STORE X
 STORE Y
 CALL atan
-
-turn: 
-LOAD FMID
-OUT RVELCMD
-LOAD RMID
-OUT LVELCMD
-IN THETA
-SUB ANGLE
-JNEG turn
+CALL turn
 	
 Die:
 ; Sometimes it's useful to permanently stop execution.
@@ -86,16 +78,66 @@ Forever:
 ;* Subroutines
 ;***************************************************************
 atan:
+;initialize variables (for repeated calls)
+LOAD Zero
+STORE INDEX
+ADDI 1
+STORE quadrant
+
+;find quadrant
+LOAD Mask7
+STORE signcheck
+
+LOAD Y 
+JPOS quadx
+LOAD Zero
+SUB Y
+STORE Y
+LOAD Three
+STORE quadrant
+
+quadx:
+LOAD X
+AND Mask7
+XOR signcheck
+JZERO checkx
+LOAD One
+ADD quadrant 
+STORE quadrant
+
+checkx:
+LOAD X
+JPOS compxy
+LOAD ZERO
+SUB X
+STORE X
+
+;switch x and y if y is bigger
+compxy:
 LOAD Y
-SHIFT 12
+SUB X
+
+JNEG findindex
+LOAD One
+STORE YBIG
+LOAD X
+STORE ATANTEMP
+LOAD Y
+STORE X
+LOAD ATANTEMP
+STORE Y
+
+findindex:
+LOAD Y
+SHIFT 11
 DIV X
 STORE yoverx
-;from division scaled up by 4096, find table index 
+;from division scaled up by 2048, find table index 
 ;gets the value at the index
 load index
-findindex: 
-;scale by 4096
-SHIFT 6   ;shift 6 is multiply by scale (4096) and divide by n-1 (64)
+indexloop: 
+;scale by 2048
+SHIFT 5   ;shift 6 is multiply by scale (2048) and divide by n-1 (64)
 SUB yoverx
 ;if yoverx bigger (AC negative) increment index and continue
 JNEG cont
@@ -104,14 +146,67 @@ LOAD index
 ADDI offset
 STORE index
 ILOAD index
+STORE ATANTEMP
+
+LOAD YBIG
+JZERO quadcalc
+
+LOAD Deg90
+SUB ATANTEMP
+STORE ATANTEMP
+
+quadcalc:
+LOAD quadrant
+ADDI -1
+JPOS qtwo
+LOAD ATANTEMP
+JUMP done
+
+qtwo:
+ADDI -1
+JPOS qthree
+LOAD Deg180
+SUB ATANTEMP
+JUMP done
+
+qthree:
+ADDI -1
+JPOS qfour
+LOAD Deg180
+ADD ATANTEMP 
+JUMP done
+
+qfour:
+LOAD Deg360
+SUB ATANTEMP
+
+done:
 STORE ANGLE
 RETURN
 cont:
 LOAD index
 ADDI 1
 STORE index
-JUMP findindex
+JUMP indexloop
 ;end atan
+
+turn:
+LOAD FSLOW
+OUT RVELCMD
+LOAD RSLOW
+OUT LVELCMD
+LOAD One
+Call WaitAC
+
+turnloop:
+LOAD FSLOW
+OUT RVELCMD
+LOAD RSLOW
+OUT LVELCMD
+IN THETA
+SUB ANGLE
+JNEG turnloop
+;end turn
 
 ; Subroutine to wait (block) for 1 second
 Wait1:
@@ -277,6 +372,7 @@ Eight:    DW 8
 Nine:     DW 9
 Ten:      DW 10
 
+
 ; Some bit masks.
 ; Masks of multiple bits can be constructed by ORing these
 ; 1-bit masks together.
@@ -309,11 +405,19 @@ RFast:    DW -500
 MinBatt:  DW 130       ; 13.0V - minimum safe battery voltage
 I2CWCmd:  DW &H1190    ; write one i2c byte, read one byte, addr 0x90
 I2CRCmd:  DW &H0190    ; write nothing, read one byte, addr 0x90
-index:    DW 0         ; initalize the index to zero
+
+
 X:        DW 0         ; change these to desired values before calling arctangent
 Y:        DW 0
+ATANTEMP:     DW 0         ; Temp so arctan can switch x and y
 ANGLE:    DW 0         ; Angle that should be turned to
-yoverx: DW 0 ;initialize y/x to zero
+YBIG:     DW 0         ;
+yoverx:   DW 0         ;initialize y/x to zero
+signcheck:     DW 1         ;
+
+;must be defined at start of atan
+index:    DW 0         ; initalize the index to zero
+quadrant:      DW 1         ; default quadrant is 1
 ;***************************************************************
 ;* IO address space map
 ;***************************************************************
@@ -354,11 +458,10 @@ XPOS:     EQU &HC0  ; Current X-position (read only)
 YPOS:     EQU &HC1  ; Y-position
 THETA:    EQU &HC2  ; Current rotational position of robot (0-359)
 RESETPOS: EQU &HC3  ; write anything here to reset odometry to 0
-offset:   EQU 208   ; table offset
 n:        EQU 64    ;n should be table length -1
 
 ;include table here
-ORG        &HD0
+offset:
 DW 0  ;0
 DW 1  ;1
 DW 2  ;2
