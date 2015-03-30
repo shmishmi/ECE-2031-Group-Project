@@ -53,11 +53,11 @@ WaitForUser:
 ;* Main code
 ;***************************************************************
 Main:
-ADDI 1
-STORE X
-STORE Y
-CALL atan
-CALL turn
+	ADDI 1
+	STORE X
+	STORE Y
+	CALL atan
+	CALL turn
 	
 Die:
 ; Sometimes it's useful to permanently stop execution.
@@ -79,134 +79,135 @@ Forever:
 ;***************************************************************
 atan:
 ;initialize variables (for repeated calls)
-LOAD Zero
-STORE INDEX
-ADDI 1
-STORE quadrant
+	LOAD Zero
+	STORE INDEX
+	ADDI 1
+	STORE quadrant
 
 ;find quadrant
-LOAD Mask7
-STORE signcheck
+	LOAD Mask7
+	STORE signcheck
 
-LOAD Y 
-JPOS quadx
-LOAD Zero
-SUB Y
-STORE Y
-LOAD Three
-STORE quadrant
+	LOAD Y 
+	JPOS quadx
+	LOAD Zero
+	SUB Y
+	STORE Y
+	LOAD Three
+	STORE quadrant
 
 quadx:
-LOAD X
-AND Mask7
-XOR signcheck
-JZERO checkx
-LOAD One
-ADD quadrant 
-STORE quadrant
+	LOAD X
+	AND Mask7
+	XOR signcheck
+	JZERO checkx
+	LOAD One
+	ADD quadrant 
+	STORE quadrant
 
 checkx:
-LOAD X
-JPOS compxy
-LOAD ZERO
-SUB X
-STORE X
+	LOAD X
+	JPOS compxy
+	LOAD ZERO
+	SUB X
+	STORE X
 
 ;switch x and y if y is bigger
 compxy:
-LOAD Y
-SUB X
+	LOAD Y
+	SUB X
 
-JNEG findindex
-LOAD One
-STORE YBIG
-LOAD X
-STORE ATANTEMP
-LOAD Y
-STORE X
-LOAD ATANTEMP
-STORE Y
+	JNEG findindex
+	LOAD One
+	STORE YBIG
+	LOAD X
+	STORE ATANTEMP
+	LOAD Y
+	STORE X
+	LOAD ATANTEMP
+	STORE Y
 
 findindex:
-LOAD Y
-SHIFT 11
-DIV X
-STORE yoverx
+	LOAD Y
+	SHIFT 11
+	DIV X
+	STORE yoverx
 ;from division scaled up by 2048, find table index 
 ;gets the value at the index
-load index
+	load index
+	
 indexloop: 
-;scale by 2048
-SHIFT 5   ;shift 6 is multiply by scale (2048) and divide by n-1 (64)
-SUB yoverx
-;if yoverx bigger (AC negative) increment index and continue
-JNEG cont
-;if index is bigger then we've gone far enough
-LOAD index
-ADDI offset
-STORE index
-ILOAD index
-STORE ATANTEMP
+	;scale by 2048
+	SHIFT 5   ;shift 6 is multiply by scale (2048) and divide by n-1 (64)
+	SUB yoverx
+	;if yoverx bigger (AC negative) increment index and continue
+	JNEG cont
+	;if index is bigger then we've gone far enough
+	LOAD index
+	ADDI offset
+	STORE index
+	ILOAD index
+	STORE ATANTEMP
 
-LOAD YBIG
-JZERO quadcalc
+	LOAD YBIG
+	JZERO quadcalc
 
-LOAD Deg90
-SUB ATANTEMP
-STORE ATANTEMP
+	LOAD Deg90
+	SUB ATANTEMP
+	STORE ATANTEMP
 
 quadcalc:
-LOAD quadrant
-ADDI -1
-JPOS qtwo
-LOAD ATANTEMP
-JUMP done
+	LOAD quadrant
+	ADDI -1
+	JPOS qtwo
+	LOAD ATANTEMP
+	JUMP done
 
 qtwo:
-ADDI -1
-JPOS qthree
-LOAD Deg180
-SUB ATANTEMP
-JUMP done
+	ADDI -1
+	JPOS qthree
+	LOAD Deg180
+	SUB ATANTEMP
+	JUMP done
 
 qthree:
-ADDI -1
-JPOS qfour
-LOAD Deg180
-ADD ATANTEMP 
-JUMP done
+	ADDI -1
+	JPOS qfour
+	LOAD Deg180
+	ADD ATANTEMP 
+	JUMP done
 
 qfour:
-LOAD Deg360
-SUB ATANTEMP
+	LOAD Deg360
+	SUB ATANTEMP
 
 done:
-STORE ANGLE
-RETURN
+	STORE ANGLE
+	RETURN
 cont:
-LOAD index
-ADDI 1
-STORE index
-JUMP indexloop
-;end atan
+	LOAD index
+	ADDI 1
+	STORE index
+	JUMP indexloop
+	;end atan
 
 turn:
-LOAD FSLOW
-OUT RVELCMD
-LOAD RSLOW
-OUT LVELCMD
-LOAD One
-Call WaitAC
+	LOAD FSLOW
+	OUT RVELCMD
+	LOAD RSLOW
+	OUT LVELCMD
+	LOAD One
+	Call WaitAC
 
 turnloop:
-LOAD FSLOW
-OUT RVELCMD
-LOAD RSLOW
-OUT LVELCMD
-IN THETA
-SUB ANGLE
-JNEG turnloop
-;end turn
+	LOAD FSLOW
+	OUT RVELCMD
+	LOAD RSLOW
+	OUT LVELCMD
+	IN THETA
+	SUB ANGLE
+	JNEG turnloop
+	;end turn
 
 ; Subroutine to wait (block) for 1 second
 Wait1:
