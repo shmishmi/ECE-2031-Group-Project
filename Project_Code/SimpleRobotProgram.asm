@@ -53,11 +53,23 @@ WaitForUser:
 ;* Main code
 ;***************************************************************
 Main:
-	ADDI 1
+	ADDI 5
 	STORE X
+	ADDI -1 
 	STORE Y
 	CALL atan
+	LOAD Angle
+	OUT SSEG2
+	;IN THETA
+	;OUT SSEG1
+	;CALL turn
+	LOAD X
+	ADDI 7
+	STORE X
+	CALL atan
 	CALL turn
+
+	
 	
 Die:
 ; Sometimes it's useful to permanently stop execution.
@@ -222,9 +234,11 @@ turnloop:
 	LOAD RSLOW
 	OUT LVELCMD
 	IN THETA
+	OUT SSEG1
 	SUB ANGLE
 	JNEG turnloop
-	;end turn
+	RETURN
+	
 
 ; Subroutine to wait (block) for 1 second
 Wait1:
