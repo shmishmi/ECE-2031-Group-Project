@@ -10,7 +10,7 @@ __Implementation__
 __Assembly Code__
 * ~~Turn Implementation~~
 * ~~Atan Subroutine~~
-* Turn Subroutine
+* ~~Turn Subroutine~~
 * Go to XY Subroutine
 * Error Checking
 * Efficiency
