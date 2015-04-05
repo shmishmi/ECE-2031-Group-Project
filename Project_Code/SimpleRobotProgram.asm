@@ -53,21 +53,45 @@ WaitForUser:
 ;* Main code
 ;***************************************************************
 Main:
-	ADDI 5
+	ADDI 2
 	STORE X
-	ADDI -1 
 	STORE Y
-	CALL atan
-	LOAD Angle
-	OUT SSEG2
-	;IN THETA
-	;OUT SSEG1
-	;CALL turn
-	LOAD X
-	ADDI 7
+	CALL goto
+	;LOAD Angle
+	;OUT SSEG2
+	LOAD Zero
+	ADDI -2
 	STORE X
-	CALL atan
-	CALL turn
+	STORE Y
+	CALL goto
+	IN THETA
+	OUT SSEG1
+	CALL Die
+
+Star:		;USING JUST GOTO
+	LOAD	One
+	STORE	X
+	LOAD	Three
+	STORE	Y
+	CALL	goto
+	LOAD	Two
+	STORE 	X
+	LOAD	Zero
+	STORE	Y
+	CALL	goto
+	LOAD	Two
+	STORE	Y
+	LOAD	ZERO
+	ADDI	-1
+	STORE	X
+	CALL	goto
+	LOAD	Three
+	STORE	X
+	CALL	goto
+	LOAD	ZERO
+	STORE	X
+	STORE	Y
+	CALL	goto
 
 	
 	
@@ -143,10 +167,10 @@ compxy:
 	LOAD One
 	STORE YBIG
 	LOAD X
-	STORE ATANTEMP
+	STORE TEMP
 	LOAD Y
 	STORE X
-	LOAD ATANTEMP
+	LOAD TEMP
 	STORE Y
 
 findindex:
@@ -169,24 +193,24 @@ indexloop:
 	ADDI offset
 	STORE index
 	ILOAD index
-	STORE ATANTEMP
+	STORE TEMP
 	
 	;Check if Y was bigger
 	LOAD YBIG
 	JZERO quadcalc
 
 	LOAD Deg90
-	SUB ATANTEMP
-	STORE ATANTEMP
+	SUB TEMP
+	STORE TEMP
 
 ;Find the correct quadrant
 ;Adjust value accordingly
 quadcalc:
-	;Angle = atantemp
+	;Angle = temp
 	LOAD quadrant
 	ADDI -1
 	JPOS qtwo
-	LOAD ATANTEMP
+	LOAD TEMP
 	JUMP done
 
 qtwo:
@@ -194,21 +218,21 @@ qtwo:
 	ADDI -1
 	JPOS qthree
 	LOAD Deg180
-	SUB ATANTEMP
+	SUB TEMP
 	JUMP done
 
 qthree:
-	;Angle = 180 + atantemp
+	;Angle = 180 + temp
 	ADDI -1
 	JPOS qfour
 	LOAD Deg180
-	ADD ATANTEMP 
+	ADD TEMP 
 	JUMP done
 
 qfour:
-	;Angle = 360 - atantemp
+	;Angle = 360 - temp
 	LOAD Deg360
-	SUB ATANTEMP
+	SUB TEMP
 
 done:
 	STORE ANGLE
@@ -221,24 +245,75 @@ cont:
 	;end atan
 
 turn:
+	IN THETA
+	SUB ANGLE	
+	JPOS CWorCCW
+	ADD Deg360  ;degrees for a CW turn
+CWorCCW:
+	SUB Deg180  
+	JPOS CCW  
+CW:       ;wheel speeds if you're turning CW
 	LOAD FSLOW
-	OUT RVELCMD
+	STORE left
 	LOAD RSLOW
-	OUT LVELCMD
-	LOAD One
-	Call WaitAC
-
+	STORE right
+	JUMP turnloop
+CCW:       ;wheel speeds for turning CCW
+	LOAD FSLOW
+	STORE right
+	LOAD RSLOW
+	STORE left
 turnloop:
-	LOAD FSLOW
+	LOAD right
 	OUT RVELCMD
-	LOAD RSLOW
+	LOAD left
 	OUT LVELCMD
 	IN THETA
 	OUT SSEG1
 	SUB ANGLE
-	JNEG turnloop
+	JZERO at_angle
+	JUMP turnloop
+at_angle:
+    LOAD Zero
+    OUT RVELCMD
+    OUT LVELCMD
 	RETURN
+
+
+
+goto:
+	CALL atan
+	CALL turn
+	CALL WAIT1
 	
+	;for moving
+	LOAD X         ;convert to odometer units
+	MULT OneFoot
+	STORE xtemp
+	LOAD Y           
+	MULT OneFoot
+	STORE ytemp
+goloop:
+	LOAD FMID
+	OUT RVELCMD
+	OUT LVELCMD
+	IN XPOS 
+	SUB xtemp
+	JNEG goloop          ;right now you have to have passed both the x and y position. better way to do this?
+	;IN YPOS
+	;SUB ytemp
+	;JPOS goloop
+stopmoving:
+	;LOAD RFAST
+	;OUT RVELCMD
+	;OUT LVELCMD
+	;LOAD ONE
+	;CALL Wait1
+	LOAD Zero
+	OUT RVELCMD
+	OUT LVELCMD
+	RETURN
+
 
 ; Subroutine to wait (block) for 1 second
 Wait1:
@@ -424,6 +499,7 @@ LowNibl:  DW &HF       ; 0000 0000 0000 1111
 OneMeter: DW 961       ; ~1m in 1.05mm units
 HalfMeter: DW 481      ; ~0.5m in 1.05mm units
 TwoFeet:  DW 586       ; ~2ft in 1.05mm units
+OneFoot:  DW 293       ; 1 foot (using math, I get 290?) used for converting in goto
 Deg90:    DW 90        ; 90 degrees in odometer units
 Deg180:   DW 180       ; 180
 Deg270:   DW 270       ; 270
@@ -442,11 +518,24 @@ I2CRCmd:  DW &H0190    ; write nothing, read one byte, addr 0x90
 
 X:        DW 0         ; change these to desired values before calling arctangent
 Y:        DW 0
-ATANTEMP:     DW 0         ; Temp so arctan can switch x and y
 ANGLE:    DW 0         ; Angle that should be turned to
 YBIG:     DW 0         ;
 yoverx:   DW 0         ;initialize y/x to zero
 signcheck:     DW 1         ;
+right:    DW 0
+left:     DW 0
+ytemp:    DW 0         ;currently assuming X/Y are in feet
+xtemp:    DW 0
+
+;stuff for interpolation
+y1: DW 0
+y2: DW 0
+x1: DW 0
+x2: DW 0
+slope: DW 0
+intercept: DW 0
+
+
 
 ;must be defined at start of atan
 index:    DW 0         ; initalize the index to zero
