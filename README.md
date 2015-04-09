@@ -1,4 +1,4 @@
-ECE 2031 Team Donuts Project
+Team Donuts Project
 =====
 This Project implements code to control DE2Bot.
 
