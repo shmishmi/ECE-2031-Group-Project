@@ -1,3 +1,4 @@
+
 LIBRARY IEEE;
 LIBRARY ALTERA_MF;
 LIBRARY LPM;
@@ -51,9 +52,7 @@ ARCHITECTURE a OF SCOMP IS
 		EX_LOADI,
 		EX_RETI,
 		EX_MULT,
-		EX_DIV,
-		EX_MULTI,
-		EX_DIVI
+		EX_DIV
 	);
 
 	TYPE STACK_TYPE IS ARRAY (0 TO 7) OF STD_LOGIC_VECTOR(9 DOWNTO 0);
@@ -65,11 +64,8 @@ ARCHITECTURE a OF SCOMP IS
 	SIGNAL AC_SAVED     : STD_LOGIC_VECTOR(15 DOWNTO 0);
 	SIGNAL AC_SHIFTED   : STD_LOGIC_VECTOR(15 DOWNTO 0);
 	SIGNAL AC_MULT      : STD_LOGIC_VECTOR(31 DOWNTO 0);
-	SIGNAL AC_MULTI     : STD_LOGIC_VECTOR(31 DOWNTO 0);
 	SIGNAL AC_QUOTIENT  : STD_LOGIC_VECTOR(15 DOWNTO 0);
 	SIGNAL AC_REMAIN    : STD_LOGIC_VECTOR(15 DOWNTO 0);
-	SIGNAL AC_QUOTIENTI : STD_LOGIC_VECTOR(15 DOWNTO 0);
-	SIGNAL AC_REMAINI   : STD_LOGIC_VECTOR(15 DOWNTO 0);
 	SIGNAL IR           : STD_LOGIC_VECTOR(15 DOWNTO 0);
 	SIGNAL MDR          : STD_LOGIC_VECTOR(15 DOWNTO 0);
 	SIGNAL PC           : STD_LOGIC_VECTOR( 9 DOWNTO 0);
@@ -78,7 +74,7 @@ ARCHITECTURE a OF SCOMP IS
 	SIGNAL MW           : STD_LOGIC;
 	SIGNAL IO_WRITE_INT : STD_LOGIC;
 	SIGNAL GIE          : STD_LOGIC;
-	SIGNAL IIE      	: STD_LOGIC_VECTOR( 3 DOWNTO 0);
+	SIGNAL IIE      : STD_LOGIC_VECTOR( 3 DOWNTO 0);
 	SIGNAL INT_REQ      : STD_LOGIC_VECTOR( 3 DOWNTO 0);
 	SIGNAL INT_REQ_SYNC : STD_LOGIC_VECTOR( 3 DOWNTO 0); -- registered version of INT_REQ
 	SIGNAL INT_ACK      : STD_LOGIC_VECTOR( 3 DOWNTO 0);
@@ -99,7 +95,7 @@ BEGIN
 		wrcontrol_aclr_a => "NONE",
 		address_aclr_a   => "NONE",
 		outdata_aclr_a   => "NONE",
-		init_file        => "Test_Mult.mif",
+		init_file        => "SimpleRobotProgram.mif",
 		lpm_hint         => "ENABLE_RUNTIME_MOD=NO",
 		lpm_type         => "altsyncram"
 	)
@@ -151,22 +147,6 @@ BEGIN
 		datab => MDR(15 DOWNTO 0),-- Second number is the input
 		result => AC_MULT -- Result of megafunction
 	);
-	
-	-- Use LPM function to create Multiply Immediate
-	MULTI : LPM_MULT
-	GENERIC MAP (
-		lpm_hint => "MAXIMIZE_SPEED=5",
-		lpm_representation => "SIGNED",
-		lpm_type => "LPM_MULT",
-		lpm_widtha => 16,
-		lpm_widthb => 16,
-		lpm_widthp => 32
-	)
-	PORT MAP (
-		dataa => AC(15 DOWNTO 0), -- First number is from accumulator
-		datab => IR(15 DOWNTO 0),-- Second number is the input
-		result => AC_MULTI -- Result of megafunction
-	);
 
 	-- Use LPM Divide implementation
 	DIV: LPM_DIVIDE
@@ -183,23 +163,7 @@ BEGIN
 		numer => AC,
 		quotient => AC_QUOTIENT,
 		remain => AC_REMAIN 	-- not going to use
-	);
-	
-	-- Use LPM Divide implementation for Immediate
-	DIVI: LPM_DIVIDE
-	GENERIC MAP (
-		lpm_drepresentation => "SIGNED",
-		lpm_hint => "LPM_REMAINDERPOSITIVE=TRUE",
-		lpm_nrepresentation => "SIGNED",
-		lpm_type => "LPM_DIVIDE",
-		lpm_widthd => 16,
-		lpm_widthn => 16
-	)
-	PORT MAP (
-		denom => IR,
-		numer => AC,
-		quotient => AC_QUOTIENTI,
-		remain => AC_REMAINI 	-- not going to use
+		
 	);
 
 	IO_ADDR  <= IR(7 DOWNTO 0);
@@ -319,10 +283,6 @@ BEGIN
 							STATE <= EX_MULT;
 						WHEN "011001" =>  	   -- DIV
 							STATE <= EX_DIV;
-						WHEN "011010" =>  	   -- MULTI
-							STATE <= EX_MULTI;
-						WHEN "011011" =>  	   -- DIVI
-							STATE <= EX_DIVI;
 
 						WHEN OTHERS =>
 							STATE <= FETCH;      -- Invalid opcodes default to NOP
@@ -445,15 +405,11 @@ BEGIN
 					STATE <= FETCH;
 					
 				WHEN EX_DIV =>
-					AC 	<= AC_QUOTIENT; -- should divide the AC by the number in the memory unit
-					STATE	<= FETCH;
-					
-				WHEN EX_MULTI =>
-					AC <= AC_MULTI(15 DOWNTO 0);
-					STATE <= FETCH;
-				
-				WHEN EX_DIVI =>
-					AC 	<= AC_QUOTIENTI; -- should divide the AC by the number in the memory unit
+					IF AC_REMAIN(15) = '1' THEN
+						AC <= AC_QUOTIENT + 1;
+					ELSE
+						AC 	<= AC_QUOTIENT; -- should divide the AC by the number in the memory unit
+					END IF;
 					STATE	<= FETCH;
 
 				WHEN OTHERS =>
