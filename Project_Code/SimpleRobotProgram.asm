@@ -59,13 +59,12 @@ Main:
 	CALL goto
 	;LOAD Angle
 	;OUT SSEG2
-	LOAD Zero
-	ADDI -2
-	STORE X
-	STORE Y
-	CALL goto
-	IN THETA
-	OUT SSEG1
+	;LOAD Zero
+	;STORE X
+	;STORE Y
+	;CALL goto
+	;IN THETA
+	;OUT SSEG1
 	CALL Die
 
 Star:		;USING JUST GOTO
@@ -115,68 +114,94 @@ Forever:
 ;***************************************************************
 atan:
 ;initialize variables (for repeated calls)
-	LOAD Zero
-	STORE INDEX
-	STORE YBIG
-	ADDI 1
-	STORE quadrant
+    LOAD Zero
+    STORE INDEX
+    STORE YBIG
+    ADDI 1
+    STORE quadrant
+;we might want to add scaling in the hardware division, because we have more bits there (can scale up larger) then divide by number.
+
+;change x and y so that they are relative to your current location
+IN XPOS
+;LOAD XPOS        use this if you want to test with pretermined values for XPOS  (also YPOS below)
+DIV OneFoot      ;these divides are going to round down to the nearest foot, we might want to change and use robot units
+STORE temp
+LOAD X 
+SUB temp
+STORE xtemp
+
+IN YPOS
+;LOAD YPOS       ;used for testing
+DIV OneFoot
+
+STORE temp
+LOAD Y
+SUB temp
+STORE ytemp
+
+;this isn't necessary once the relative position thing is working (should be working now)
+;LOAD Y 
+;STORE ytemp
+;LOAD X 
+;STORE xtemp
+
 
 ;find quadrant
-	;Reset Sign Check
-	LOAD MaskSign 
-	AND  Y ; Get sign bit of y
-	STORE signcheck
-	;If y is positive go to x
-	;If y is negative take abs. value,
-	;and go to quad 3 (because y is negative in quad 3).
-	LOAD Y 
-	JPOS quadx
-	LOAD Zero
-	SUB Y
-	STORE Y
-	LOAD Three
-	STORE quadrant
+    ;Reset Sign Check
+    LOAD MaskSign 
+    AND  ytemp ; Get sign bit of y
+    STORE signcheck
+    ;If y is positive go to x
+    ;If y is negative take abs. value,
+    ;and go to quad 3 (because y is negative in quad 3).
+    LOAD ytemp  
+    JPOS quadx
+    LOAD Zero
+    SUB ytemp
+    STORE ytemp
+    LOAD Three
+    STORE quadrant
 
 quadx:
-	LOAD X
-	AND MaskSign ;Get sign of x
-	XOR signcheck ;Check to see if sign of y and x are the same
-	;Figure out quadrant
-	JZERO checkx ; x and y are both the same sign
-	LOAD One ; different signs add one to quadrant
-	ADD quadrant 
-	STORE quadrant
+    LOAD xtemp
+    AND MaskSign ;Get sign of x
+    XOR signcheck ;Check to see if sign of y and x are the same
+    ;Figure out quadrant
+    JZERO checkx ; x and y are both the same sign
+    LOAD One ; different signs add one to quadrant
+    ADD quadrant 
+    STORE quadrant
 ;Make x positive if not already
 ;Needed for actual function
 checkx:
-	LOAD X
+	LOAD xtemp
 	JPOS compxy
 	LOAD ZERO
-	SUB X
-	STORE X
+	SUB xtemp
+	STORE xtemp
 
 ;switch x and y if y is bigger
-;
+
 compxy:
-	LOAD Y
-	SUB X
+	LOAD ytemp
+	SUB xtemp
 	
 	JNEG findindex ;If x is bigger move to atan subroutine
 	;Switch X and Y if Y is bigger
 	;Need for 90 - atan(x/y)
 	LOAD One
 	STORE YBIG
-	LOAD X
+	LOAD xtemp
 	STORE TEMP
-	LOAD Y
-	STORE X
+	LOAD ytemp
+	STORE xtemp
 	LOAD TEMP
-	STORE Y
+	STORE ytemp
 
 findindex:
-	LOAD Y
+	LOAD ytemp
 	SHIFT 11
-	DIV X
+	DIV xtemp
 	STORE yoverx   ;yoverx = floor(y*2048/x)
 ;from division scaled up by 2048, find table index 
 ;gets the value at the index
@@ -189,11 +214,49 @@ indexloop:
 	;if yoverx bigger (AC negative) increment index and continue
 	JNEG cont
 	;if index is bigger then we've gone far enough
+	;LOAD index   ;normal code, not needed if interpolation is being used
+	;ADDI offset
+	;STORE index
+	;ILOAD index
+	;STORE TEMP
+	
+	;interpolation
 	LOAD index
+	;SHIFT 5            ;this is scale / n , change the value accordingly
+	STORE x2
+	ADDI -1            ;use this value for delta x (this will change based on scale and n) 
+	STORE x1
+	
 	ADDI offset
-	STORE index
-	ILOAD index
+	STORE y1
+	ILOAD y1
+	STORE y1
+	
+	LOAD x2
+	ADDI offset
+	STORE y2
+	ILOAD y2
+	
+	STORE y2       
+	
+	SUB y1
+	STORE y2         ;using this for deltay
+	
+	LOAD x1
+	SHIFT 5
+	STORE x1      ;get x1 on same scale as yoverx 
+	
+	LOAD yoverx
+	SUB x1
+	MULT y2      ;using y2 so i don't have to use another memory location, this is just deltay
+	SHIFT -5   ;this is the same as dividing by delta x since in this case it is 32
+	ADD y1
 	STORE TEMP
+	
+	
+	
+	;end interpolation
+	
 	
 	;Check if Y was bigger
 	LOAD YBIG
@@ -235,6 +298,7 @@ qfour:
 	SUB TEMP
 
 done:
+	;OUT SSEG1
 	STORE ANGLE
 	RETURN
 cont:
@@ -269,7 +333,7 @@ turnloop:
 	LOAD left
 	OUT LVELCMD
 	IN THETA
-	OUT SSEG1
+	;OUT SSEG1
 	SUB ANGLE
 	JZERO at_angle
 	JUMP turnloop
@@ -284,31 +348,72 @@ at_angle:
 goto:
 	CALL atan
 	CALL turn
-	CALL WAIT1
+	CALL WAIT1  ;wheels need to be stopped completely before the robot stops moving or it curves off
 	
+
+
+	LOAD Zero
+	STORE temp   ;temp is initialized to zero (must be after atan and turn since they use it)  
+
 	;for moving
 	LOAD X         ;convert to odometer units
 	MULT OneFoot
 	STORE xtemp
-	LOAD Y           
-	MULT OneFoot
-	STORE ytemp
+	IN XPOS
+	SUB xtemp
+	JNEG goloop 
+	LOAD One
+	STORE temp       ;use temp to indicate if xpos was bigger
+	
+	
+	;LOAD Y            ;only need if we're also checking y as an end condition  
+	;MULT OneFoot
+	;STORE ytemp
 goloop:
+;deceleration code - finding hypotenuse doesn't work because of overflow. 
+	; should test the other code without this, it hould work now
+	IN XPOS
+	STORE sum
+	IN YPOS
+	ADD sum
+	SUB slowdown
+    JPOS normalspeed
+
+    LOAD FSLOW            ;this puts slow to the wheels once you're 1-1.5 feet away from the destination
+    OUT RVELCMD
+	OUT LVELCMD
+    JUMP choosedirection
+
+    normalspeed:
 	LOAD FMID
 	OUT RVELCMD
 	OUT LVELCMD
+
+    choosedirection:
+	LOAD temp
+	JZERO destinationbigger
+	
+	destinationsmaller:
+	IN XPOS
+	SUB xtemp
+	JPOS goloop
+	JUMP stopmoving
+	
+	destinationbigger:
 	IN XPOS 
 	SUB xtemp
-	JNEG goloop          ;right now you have to have passed both the x and y position. better way to do this?
+	JNEG goloop         
+	
 	;IN YPOS
 	;SUB ytemp
 	;JPOS goloop
-stopmoving:
+stopmoving:            ;if we get here we know that the x coordinate is correct
 	;LOAD RFAST
 	;OUT RVELCMD
 	;OUT LVELCMD
 	;LOAD ONE
 	;CALL Wait1
+	
 	LOAD Zero
 	OUT RVELCMD
 	OUT LVELCMD
@@ -524,17 +629,16 @@ yoverx:   DW 0         ;initialize y/x to zero
 signcheck:     DW 1         ;
 right:    DW 0
 left:     DW 0
-ytemp:    DW 0         ;currently assuming X/Y are in feet
+sum:      DW 0         ;currently assuming X/Y are in feet
 xtemp:    DW 0
+ytemp:    DW 0
+slowdown: DW 440       ;this is where we should switch to fslow. 440 is ~1.5 feet, which is roughly 2/sqrt(2)
 
 ;stuff for interpolation
 y1: DW 0
 y2: DW 0
 x1: DW 0
 x2: DW 0
-slope: DW 0
-intercept: DW 0
-
 
 
 ;must be defined at start of atan
