@@ -53,10 +53,11 @@ WaitForUser:
 ;* Main code
 ;***************************************************************
 Main:
-	ADDI 2
+	ADDI 100
 	STORE X
 	STORE Y
 	CALL goto
+	
 	;LOAD Angle
 	;OUT SSEG2
 	;LOAD Zero
@@ -119,12 +120,12 @@ atan:
     STORE YBIG
     ADDI 1
     STORE quadrant
-;we might want to add scaling in the hardware division, because we have more bits there (can scale up larger) then divide by number.
 
 ;change x and y so that they are relative to your current location
 IN XPOS
-;LOAD XPOS        use this if you want to test with pretermined values for XPOS  (also YPOS below)
-DIV OneFoot      ;these divides are going to round down to the nearest foot, we might want to change and use robot units
+;LOAD XPOS       ; use this if you want to test with pretermined values for XPOS  (also YPOS below)
+SHIFT 1
+DIV Twocm     ;these divides are going to round down to the nearest cm
 STORE temp
 LOAD X 
 SUB temp
@@ -132,7 +133,8 @@ STORE xtemp
 
 IN YPOS
 ;LOAD YPOS       ;used for testing
-DIV OneFoot
+SHIFT 1
+DIV Twocm
 
 STORE temp
 LOAD Y
@@ -200,19 +202,21 @@ compxy:
 
 findindex:
 	LOAD ytemp
-	SHIFT 11
+	SHIFT 7
 	DIV xtemp
-	STORE yoverx   ;yoverx = floor(y*2048/x)
-;from division scaled up by 2048, find table index 
+	STORE yoverx   ;yoverx = floor(y*2^7/x)
+;from division scaled up by 2^7, find table index 
 ;gets the value at the index
 	load index
 	
 indexloop: 
 	;scale by 2048
-	SHIFT 5   ;shift 5 is multiply by scale (2048) and divide by n-1 (64)
+	SHIFT 4   ;shift 4 is multiply by scale (2^7) and divide by n-1 (8)
 	SUB yoverx
+	
 	;if yoverx bigger (AC negative) increment index and continue
 	JNEG cont
+	
 	;if index is bigger then we've gone far enough
 	;LOAD index   ;normal code, not needed if interpolation is being used
 	;ADDI offset
@@ -236,24 +240,21 @@ indexloop:
 	ADDI offset
 	STORE y2
 	ILOAD y2
-	
 	STORE y2       
 	
 	SUB y1
 	STORE y2         ;using this for deltay
 	
 	LOAD x1
-	SHIFT 5
+	SHIFT 4
 	STORE x1      ;get x1 on same scale as yoverx 
 	
 	LOAD yoverx
 	SUB x1
 	MULT y2      ;using y2 so i don't have to use another memory location, this is just deltay
-	SHIFT -5   ;this is the same as dividing by delta x since in this case it is 32
+	SHIFT -4   ;this is the same as dividing by delta x since in this case it is 16
 	ADD y1
 	STORE TEMP
-	
-	
 	
 	;end interpolation
 	
@@ -357,7 +358,8 @@ goto:
 
 	;for moving
 	LOAD X         ;convert to odometer units
-	MULT OneFoot
+	MULT Twocm
+	SHIFT -1
 	STORE xtemp
 	IN XPOS
 	SUB xtemp
@@ -604,7 +606,8 @@ LowNibl:  DW &HF       ; 0000 0000 0000 1111
 OneMeter: DW 961       ; ~1m in 1.05mm units
 HalfMeter: DW 481      ; ~0.5m in 1.05mm units
 TwoFeet:  DW 586       ; ~2ft in 1.05mm units
-OneFoot:  DW 293       ; 1 foot (using math, I get 290?) used for converting in goto
+OneFoot:  DW 293       ; 1 foot 
+Twocm:    DW 19        ; there are ~ 19 robot units in twocm 
 Deg90:    DW 90        ; 90 degrees in odometer units
 Deg180:   DW 180       ; 180
 Deg270:   DW 270       ; 270
@@ -629,7 +632,7 @@ yoverx:   DW 0         ;initialize y/x to zero
 signcheck:     DW 1         ;
 right:    DW 0
 left:     DW 0
-sum:      DW 0         ;currently assuming X/Y are in feet
+sum:      DW 0         ;currently assuming X/Y are in centimeters
 xtemp:    DW 0
 ytemp:    DW 0
 slowdown: DW 440       ;this is where we should switch to fslow. 440 is ~1.5 feet, which is roughly 2/sqrt(2)
@@ -688,68 +691,12 @@ n:        EQU 64    ;n should be table length -1
 
 ;include table here
 offset:
-DW 0  ;0
-DW 1  ;1
-DW 2  ;2
-DW 3  ;3
-DW 4  ;4
-DW 4  ;5
-DW 5  ;6
-DW 6  ;7
-DW 7  ;8
-DW 8  ;9
-DW 9  ;10
-DW 10 ;11
-DW 11 ;12
-DW 11 ;13
-DW 12 ;14
-DW 13
-DW 14
-DW 15
-DW 16
-DW 17
-DW 17
-DW 18
-DW 19
-DW 20
-DW 21
-DW 21
-DW 22
-DW 23
-DW 24
-DW 24
-DW 25
-DW 26
-DW 27
-DW 27
-DW 28
-DW 29
-DW 29
-DW 30
-DW 31
-DW 31
-DW 32
-DW 33
-DW 33
-DW 34
-DW 35
-DW 35
-DW 36
-DW 36
-DW 37
-DW 37
-DW 38
-DW 39
-DW 39
-DW 40
-DW 40
-DW 41
-DW 41
-DW 42
-DW 42
-DW 43
-DW 43
-DW 44
-DW 44
-DW 45
-DW 45
+DW  0
+DW  7
+DW  14
+DW  21
+DW  27
+DW  32
+DW  37
+DW  41
+DW  45      ;this is entry 9
