@@ -19,16 +19,18 @@ UI:		IN SWITCHES
 		JUMP UI    
 
 		;Distance needs to be Changed
-DISTANCE:  ADDI 145
+DISTANCE:  ADDI 50
+           MULT Twocm
            JUMP NEXT
-DISTANCE2: ADDI 2 
-           MULT OneFoot
+DISTANCE2: ADDI 100 
+           MULT Twocm
            JUMP NEXT
-DISTANCE3: ADDI 440 
+DISTANCE3: ADDI 200
+           MULT Twocm
            JUMP NEXT
-DISTANCE4: ADDI 2
-		   MULT OneFoot
-		   JUMP NEXT
+DISTANCE4: ADDI 250
+           MULT Twocm
+           JUMP NEXT
 			
 NEXT:	STORE RADIUS
 
