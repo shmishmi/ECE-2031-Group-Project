@@ -53,11 +53,21 @@ WaitForUser:
 ;* Main code
 ;***************************************************************
 Main:
-	ADDI 100
+	ADDI 50
 	STORE X
 	STORE Y
 	CALL goto
 	
+	LOAD Zero
+	ADDI 100
+	STORE X
+	LOAD Zero
+	STORE Y
+	CALL goto
+	LOAD Zero
+	STORE X
+	STORE Y
+	CALL goto
 	;LOAD Angle
 	;OUT SSEG2
 	;LOAD Zero
@@ -68,7 +78,8 @@ Main:
 	;OUT SSEG1
 	CALL Die
 
-Star:		;USING JUST GOTO
+Star:		;USING JUST 
+
 	LOAD	One
 	STORE	X
 	LOAD	Three
@@ -334,7 +345,7 @@ turnloop:
 	LOAD left
 	OUT LVELCMD
 	IN THETA
-	;OUT SSEG1
+	OUT SSEG1
 	SUB ANGLE
 	JZERO at_angle
 	JUMP turnloop
@@ -360,7 +371,13 @@ goto:
 	LOAD X         ;convert to odometer units
 	MULT Twocm
 	SHIFT -1
-	STORE xtemp
+	STORE xtemp	
+	
+	LOAD Y            ;only need if we're also checking y as an end condition  
+	MULT Twocm
+	SHIFT -1
+	STORE ytemp
+	
 	IN XPOS
 	SUB xtemp
 	JNEG goloop 
@@ -368,16 +385,26 @@ goto:
 	STORE temp       ;use temp to indicate if xpos was bigger
 	
 	
-	;LOAD Y            ;only need if we're also checking y as an end condition  
-	;MULT OneFoot
-	;STORE ytemp
+
 goloop:
 ;deceleration code - finding hypotenuse doesn't work because of overflow. 
 	; should test the other code without this, it hould work now
 	IN XPOS
+	STORE x1       ;x1 is used as a temporary variable
+	SUB xtemp
+	JPOS xispositive
+	MULT NegOne
+	xispositive:
 	STORE sum
+	
 	IN YPOS
+	STORE y1      ;y1 is used as a temporary variable
+	SUB ytemp
+	JPOS yispositive
+	MULT NegOne
+	yispositive:
 	ADD sum
+	
 	SUB slowdown
     JPOS normalspeed
 
