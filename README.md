@@ -4,7 +4,7 @@ This Project implements code to control DE2Bot.
 
 #Current Goals
 __Implementation__
-* Agree on Atan Implementation
+* ~~Agree on Atan Implementation~~
 * ~~Select additional implementation~~ 
 
 __Assembly Code__
