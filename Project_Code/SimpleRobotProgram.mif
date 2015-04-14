@@ -1,0 +1,444 @@
+-- Altera Memory Initialization File (MIF)
+
+DEPTH = 1024;
+WIDTH = 16;
+
+ADDRESS_RADIX = HEX;
+DATA_RADIX = HEX;
+
+CONTENT
+  BEGIN
+    [000..3FF] : 0000;  -- Default to NOP
+
+           000 : 056C;  -- 	LOAD   Zero
+           001 : 4C83;  -- 	OUT    LVELCMD     ; Stop motors
+           002 : 4C8B;  -- 	OUT    RVELCMD
+           003 : 4CB2;  -- 	OUT    SONAREN     ; Disable sonar (optional)
+           004 : 4135;  -- 	CALL   SetupI2C    ; Configure the I2C to read the battery voltage
+           005 : 4117;  -- 	CALL   BattCheck   ; Get battery voltage (and end if too low).
+           006 : 4C06;  -- 	OUT    LCD         ; Display batt voltage on LCD
+           007 : 4803;  -- 	IN     XIO         ; XIO contains SAFETY signal
+           008 : 257B;  -- 	AND    Mask4       ; SAFETY signal is bit 4
+           009 : 1C0F;  -- 	JPOS   WaitForUser ; If ready, jump to wait for PB3
+           00A : 4802;  -- 	IN     TIMER       ; We'll use the timer value to
+           00B : 2578;  -- 	AND    Mask1       ;  blink LED17 as a reminder to toggle SW17
+           00C : 3008;  -- 	SHIFT  8           ; Shift over to LED17
+           00D : 4C07;  -- 	OUT    XLEDS       ; LED17 blinks at 2.5Hz (10Hz/4)
+           00E : 1407;  -- 	JUMP   WaitForSafety
+           00F : 4802;  -- 	IN     TIMER       ; We'll blink the LEDs above PB3
+           010 : 2578;  -- 	AND    Mask1
+           011 : 3005;  -- 	SHIFT  5           ; Both LEDG6 and LEDG7
+           012 : 096A;  -- 	STORE  Temp        ; (overkill, but looks nice)
+           013 : 3001;  -- 	SHIFT  1
+           014 : 296A;  -- 	OR     Temp
+           015 : 4C07;  -- 	OUT    XLEDS
+           016 : 4803;  -- 	IN     XIO         ; XIO contains KEYs
+           017 : 2579;  -- 	AND    Mask2       ; KEY3 mask (KEY0 is reset and can't be read)
+           018 : 1C0F;  -- 	JPOS   WaitForUser ; not ready (KEYs are active-low, hence JPOS)
+           019 : 056C;  -- 	LOAD   Zero
+           01A : 4C07;  -- 	OUT    XLEDS       ; clear LEDs once ready to continue
+           01B : 3432;  -- 	ADDI 50
+           01C : 0994;  -- 	STORE X
+           01D : 0995;  -- 	STORE Y
+           01E : 40D5;  -- 	CALL goto
+           01F : 056C;  -- 	LOAD Zero
+           020 : 3464;  -- 	ADDI 100
+           021 : 0994;  -- 	STORE X
+           022 : 056C;  -- 	LOAD Zero
+           023 : 0995;  -- 	STORE Y
+           024 : 40D5;  -- 	CALL goto
+           025 : 056C;  -- 	LOAD Zero
+           026 : 0994;  -- 	STORE X
+           027 : 0995;  -- 	STORE Y
+           028 : 40D5;  -- 	CALL goto
+           029 : 4041;  -- 	CALL Die
+           02A : 056D;  -- 	LOAD	One
+           02B : 0994;  -- 	STORE	X
+           02C : 056F;  -- 	LOAD	Three
+           02D : 0995;  -- 	STORE	Y
+           02E : 40D5;  -- 	CALL	goto
+           02F : 056E;  -- 	LOAD	Two
+           030 : 0994;  -- 	STORE 	X
+           031 : 056C;  -- 	LOAD	Zero
+           032 : 0995;  -- 	STORE	Y
+           033 : 40D5;  -- 	CALL	goto
+           034 : 056E;  -- 	LOAD	Two
+           035 : 0995;  -- 	STORE	Y
+           036 : 056C;  -- 	LOAD	ZERO
+           037 : 37FF;  -- 	ADDI	-1
+           038 : 0994;  -- 	STORE	X
+           039 : 40D5;  -- 	CALL	goto
+           03A : 056F;  -- 	LOAD	Three
+           03B : 0994;  -- 	STORE	X
+           03C : 40D5;  -- 	CALL	goto
+           03D : 056C;  -- 	LOAD	ZERO
+           03E : 0994;  -- 	STORE	X
+           03F : 0995;  -- 	STORE	Y
+           040 : 40D5;  -- 	CALL	goto
+           041 : 056C;  -- 	LOAD   Zero         ; Stop everything.
+           042 : 4C83;  -- 	OUT    LVELCMD
+           043 : 4C8B;  -- 	OUT    RVELCMD
+           044 : 4CB2;  -- 	OUT    SONAREN
+           045 : 0448;  -- 	LOAD   DEAD         ; An indication that we are dead
+           046 : 4C05;  -- 	OUT    SSEG2
+           047 : 1447;  -- 	JUMP   Forever      ; Do this forever.
+           048 : DEAD;  -- 	DEAD:  DW &HDEAD    ; Example of a "global variable"
+           049 : 056C;  --     LOAD Zero
+           04A : 09A4;  --     STORE INDEX
+           04B : 0997;  --     STORE YBIG
+           04C : 3401;  --     ADDI 1
+           04D : 09A5;  --     STORE quadrant
+           04E : 48C0;  -- IN XPOS
+           04F : 3001;  -- SHIFT 1
+           050 : 6586;  -- DIV Twocm     ;these divides are going to round down to the nearest cm
+           051 : 096A;  -- STORE temp
+           052 : 0594;  -- LOAD X 
+           053 : 116A;  -- SUB temp
+           054 : 099D;  -- STORE xtemp
+           055 : 48C1;  -- IN YPOS
+           056 : 3001;  -- SHIFT 1
+           057 : 6586;  -- DIV Twocm
+           058 : 096A;  -- STORE temp
+           059 : 0595;  -- LOAD Y
+           05A : 116A;  -- SUB temp
+           05B : 099E;  -- STORE ytemp
+           05C : 057F;  --     LOAD MaskSign 
+           05D : 259E;  --     AND  ytemp ; Get sign bit of y
+           05E : 0999;  --     STORE signcheck
+           05F : 059E;  --     LOAD ytemp  
+           060 : 1C66;  --     JPOS quadx
+           061 : 056C;  --     LOAD Zero
+           062 : 119E;  --     SUB ytemp
+           063 : 099E;  --     STORE ytemp
+           064 : 056F;  --     LOAD Three
+           065 : 09A5;  --     STORE quadrant
+           066 : 059D;  --     LOAD xtemp
+           067 : 257F;  --     AND MaskSign ;Get sign of x
+           068 : 2D99;  --     XOR signcheck ;Check to see if sign of y and x are the same
+           069 : 206D;  --     JZERO checkx ; x and y are both the same sign
+           06A : 056D;  --     LOAD One ; different signs add one to quadrant
+           06B : 0DA5;  --     ADD quadrant 
+           06C : 09A5;  --     STORE quadrant
+           06D : 059D;  -- 	LOAD xtemp
+           06E : 1C72;  -- 	JPOS compxy
+           06F : 056C;  -- 	LOAD ZERO
+           070 : 119D;  -- 	SUB xtemp
+           071 : 099D;  -- 	STORE xtemp
+           072 : 059E;  -- 	LOAD ytemp
+           073 : 119D;  -- 	SUB xtemp
+           074 : 187D;  -- 	JNEG findindex ;If x is bigger move to atan subroutine
+           075 : 056D;  -- 	LOAD One
+           076 : 0997;  -- 	STORE YBIG
+           077 : 059D;  -- 	LOAD xtemp
+           078 : 096A;  -- 	STORE TEMP
+           079 : 059E;  -- 	LOAD ytemp
+           07A : 099D;  -- 	STORE xtemp
+           07B : 056A;  -- 	LOAD TEMP
+           07C : 099E;  -- 	STORE ytemp
+           07D : 059E;  -- 	LOAD ytemp
+           07E : 3007;  -- 	SHIFT 7
+           07F : 659D;  -- 	DIV xtemp
+           080 : 0998;  -- 	STORE yoverx   ;yoverx = floor(y*2^7/x)
+           081 : 05A4;  -- 	load index
+           082 : 3004;  -- 	SHIFT 4   ;shift 4 is multiply by scale (2^7) and divide by n-1 (8)
+           083 : 1198;  -- 	SUB yoverx
+           084 : 18B5;  -- 	JNEG cont
+           085 : 05A4;  -- 	LOAD index
+           086 : 09A3;  -- 	STORE x2
+           087 : 37FF;  -- 	ADDI -1            ;use this value for delta x (this will change based on scale and n) 
+           088 : 09A2;  -- 	STORE x1
+           089 : 35A6;  -- 	ADDI offset
+           08A : 09A0;  -- 	STORE y1
+           08B : 39A0;  -- 	ILOAD y1
+           08C : 09A0;  -- 	STORE y1
+           08D : 05A3;  -- 	LOAD x2
+           08E : 35A6;  -- 	ADDI offset
+           08F : 09A1;  -- 	STORE y2
+           090 : 39A1;  -- 	ILOAD y2
+           091 : 09A1;  -- 	STORE y2       
+           092 : 11A0;  -- 	SUB y1
+           093 : 09A1;  -- 	STORE y2         ;using this for deltay
+           094 : 05A2;  -- 	LOAD x1
+           095 : 3004;  -- 	SHIFT 4
+           096 : 09A2;  -- 	STORE x1      ;get x1 on same scale as yoverx 
+           097 : 0598;  -- 	LOAD yoverx
+           098 : 11A2;  -- 	SUB x1
+           099 : 61A1;  -- 	MULT y2      ;using y2 so i don't have to use another memory location, this is just deltay
+           09A : 3014;  -- 	SHIFT -4   ;this is the same as dividing by delta x since in this case it is 16
+           09B : 0DA0;  -- 	ADD y1
+           09C : 096A;  -- 	STORE TEMP
+           09D : 0597;  -- 	LOAD YBIG
+           09E : 20A2;  -- 	JZERO quadcalc
+           09F : 0587;  -- 	LOAD Deg90
+           0A0 : 116A;  -- 	SUB TEMP
+           0A1 : 096A;  -- 	STORE TEMP
+           0A2 : 05A5;  -- 	LOAD quadrant
+           0A3 : 37FF;  -- 	ADDI -1
+           0A4 : 1CA7;  -- 	JPOS qtwo
+           0A5 : 056A;  -- 	LOAD TEMP
+           0A6 : 14B3;  -- 	JUMP done
+           0A7 : 37FF;  -- 	ADDI -1
+           0A8 : 1CAC;  -- 	JPOS qthree
+           0A9 : 0588;  -- 	LOAD Deg180
+           0AA : 116A;  -- 	SUB TEMP
+           0AB : 14B3;  -- 	JUMP done
+           0AC : 37FF;  -- 	ADDI -1
+           0AD : 1CB1;  -- 	JPOS qfour
+           0AE : 0588;  -- 	LOAD Deg180
+           0AF : 0D6A;  -- 	ADD TEMP 
+           0B0 : 14B3;  -- 	JUMP done
+           0B1 : 058A;  -- 	LOAD Deg360
+           0B2 : 116A;  -- 	SUB TEMP
+           0B3 : 0996;  -- 	STORE ANGLE
+           0B4 : 4400;  -- 	RETURN
+           0B5 : 05A4;  -- 	LOAD index
+           0B6 : 3401;  -- 	ADDI 1
+           0B7 : 09A4;  -- 	STORE index
+           0B8 : 1482;  -- 	JUMP indexloop
+           0B9 : 48C2;  -- 	IN THETA
+           0BA : 1196;  -- 	SUB ANGLE	
+           0BB : 1CBD;  -- 	JPOS CWorCCW
+           0BC : 0D8A;  -- 	ADD Deg360  ;degrees for a CW turn
+           0BD : 1188;  -- 	SUB Deg180  
+           0BE : 1CC4;  -- 	JPOS CCW  
+           0BF : 058B;  -- 	LOAD FSLOW
+           0C0 : 099B;  -- 	STORE left
+           0C1 : 058C;  -- 	LOAD RSLOW
+           0C2 : 099A;  -- 	STORE right
+           0C3 : 14C8;  -- 	JUMP turnloop
+           0C4 : 058B;  -- 	LOAD FSLOW
+           0C5 : 099A;  -- 	STORE right
+           0C6 : 058C;  -- 	LOAD RSLOW
+           0C7 : 099B;  -- 	STORE left
+           0C8 : 059A;  -- 	LOAD right
+           0C9 : 4C8B;  -- 	OUT RVELCMD
+           0CA : 059B;  -- 	LOAD left
+           0CB : 4C83;  -- 	OUT LVELCMD
+           0CC : 48C2;  -- 	IN THETA
+           0CD : 4C04;  -- 	OUT SSEG1
+           0CE : 1196;  -- 	SUB ANGLE
+           0CF : 20D1;  -- 	JZERO at_angle
+           0D0 : 14C8;  -- 	JUMP turnloop
+           0D1 : 056C;  --     LOAD Zero
+           0D2 : 4C8B;  --     OUT RVELCMD
+           0D3 : 4C83;  --     OUT LVELCMD
+           0D4 : 4400;  -- 	RETURN
+           0D5 : 4049;  -- 	CALL atan
+           0D6 : 40B9;  -- 	CALL turn
+           0D7 : 4109;  -- 	CALL WAIT1  ;wheels need to be stopped completely before the robot stops moving or it curves off
+           0D8 : 056C;  -- 	LOAD Zero
+           0D9 : 096A;  -- 	STORE temp   ;temp is initialized to zero (must be after atan and turn since they use it)  
+           0DA : 0594;  -- 	LOAD X         ;convert to odometer units
+           0DB : 6186;  -- 	MULT Twocm
+           0DC : 3011;  -- 	SHIFT -1
+           0DD : 099D;  -- 	STORE xtemp	
+           0DE : 0595;  -- 	LOAD Y            ;only need if we're also checking y as an end condition  
+           0DF : 6186;  -- 	MULT Twocm
+           0E0 : 3011;  -- 	SHIFT -1
+           0E1 : 099E;  -- 	STORE ytemp
+           0E2 : 48C0;  -- 	IN XPOS
+           0E3 : 119D;  -- 	SUB xtemp
+           0E4 : 18E7;  -- 	JNEG goloop 
+           0E5 : 056D;  -- 	LOAD One
+           0E6 : 096A;  -- 	STORE temp       ;use temp to indicate if xpos was bigger
+           0E7 : 48C0;  -- 	IN XPOS
+           0E8 : 09A2;  -- 	STORE x1       ;x1 is used as a temporary variable
+           0E9 : 119D;  -- 	SUB xtemp
+           0EA : 1CEC;  -- 	JPOS xispositive
+           0EB : 616B;  -- 	MULT NegOne
+           0EC : 099C;  -- 	STORE sum
+           0ED : 48C1;  -- 	IN YPOS
+           0EE : 09A0;  -- 	STORE y1      ;y1 is used as a temporary variable
+           0EF : 119E;  -- 	SUB ytemp
+           0F0 : 1CF2;  -- 	JPOS yispositive
+           0F1 : 616B;  -- 	MULT NegOne
+           0F2 : 0D9C;  -- 	ADD sum
+           0F3 : 119F;  -- 	SUB slowdown
+           0F4 : 1CF9;  --     JPOS normalspeed
+           0F5 : 058B;  --     LOAD FSLOW            ;this puts slow to the wheels once you're 1-1.5 feet away from the destination
+           0F6 : 4C8B;  --     OUT RVELCMD
+           0F7 : 4C83;  -- 	OUT LVELCMD
+           0F8 : 14FC;  --     JUMP choosedirection
+           0F9 : 058D;  -- 	LOAD FMID
+           0FA : 4C8B;  -- 	OUT RVELCMD
+           0FB : 4C83;  -- 	OUT LVELCMD
+           0FC : 056A;  -- 	LOAD temp
+           0FD : 2102;  -- 	JZERO destinationbigger
+           0FE : 48C0;  -- 	IN XPOS
+           0FF : 119D;  -- 	SUB xtemp
+           100 : 1CE7;  -- 	JPOS goloop
+           101 : 1505;  -- 	JUMP stopmoving
+           102 : 48C0;  -- 	IN XPOS 
+           103 : 119D;  -- 	SUB xtemp
+           104 : 18E7;  -- 	JNEG goloop         
+           105 : 056C;  -- 	LOAD Zero
+           106 : 4C8B;  -- 	OUT RVELCMD
+           107 : 4C83;  -- 	OUT LVELCMD
+           108 : 4400;  -- 	RETURN
+           109 : 4C02;  -- 	OUT    TIMER
+           10A : 4802;  -- 	IN     TIMER
+           10B : 4C07;  -- 	OUT    XLEDS       ; User-feedback that a pause is occurring.
+           10C : 37F6;  -- 	ADDI   -10         ; 1 second in 10Hz.
+           10D : 190A;  -- 	JNEG   Wloop
+           10E : 4400;  -- 	RETURN
+           10F : 0916;  -- 	STORE  WaitTime
+           110 : 4C02;  -- 	OUT    Timer
+           111 : 4802;  -- 	IN     Timer
+           112 : 4C07;  -- 	OUT    XLEDS       ; User-feedback that a pause is occurring.
+           113 : 1116;  -- 	SUB    WaitTime
+           114 : 1911;  -- 	JNEG   WACLoop
+           115 : 4400;  -- 	RETURN
+           116 : 0000;  -- 	WaitTime: DW 0     ; "local" variable.
+           117 : 412F;  -- 	CALL   GetBattLvl
+           118 : 2117;  -- 	JZERO  BattCheck   ; A/D hasn't had time to initialize
+           119 : 1191;  -- 	SUB    MinBatt
+           11A : 191D;  -- 	JNEG   DeadBatt
+           11B : 0D91;  -- 	ADD    MinBatt     ; get original value back
+           11C : 4400;  -- 	RETURN
+           11D : 0570;  -- 	LOAD   Four
+           11E : 4C0A;  -- 	OUT    BEEP        ; start beep sound
+           11F : 412F;  -- 	CALL   GetBattLvl  ; get the battery level
+           120 : 4C04;  -- 	OUT    SSEG1       ; display it everywhere
+           121 : 4C05;  -- 	OUT    SSEG2
+           122 : 4C06;  -- 	OUT    LCD
+           123 : 056C;  -- 	LOAD   Zero
+           124 : 37FF;  -- 	ADDI   -1          ; 0xFFFF
+           125 : 4C01;  -- 	OUT    LEDS        ; all LEDs on
+           126 : 4C07;  -- 	OUT    XLEDS
+           127 : 4109;  -- 	CALL   Wait1       ; 1 second
+           128 : 056C;  -- 	Load   Zero
+           129 : 4C0A;  -- 	OUT    BEEP        ; stop beeping
+           12A : 056C;  -- 	LOAD   Zero
+           12B : 4C01;  -- 	OUT    LEDS        ; LEDs off
+           12C : 4C07;  -- 	OUT    XLEDS
+           12D : 4109;  -- 	CALL   Wait1       ; 1 second
+           12E : 151D;  -- 	JUMP   DeadBatt    ; repeat forever
+           12F : 0593;  -- 	LOAD   I2CRCmd     ; 0x0190 (write 0B, read 1B, addr 0x90)
+           130 : 4C90;  -- 	OUT    I2C_CMD     ; to I2C_CMD
+           131 : 4C92;  -- 	OUT    I2C_RDY     ; start the communication
+           132 : 413D;  -- 	CALL   BlockI2C    ; wait for it to finish
+           133 : 4891;  -- 	IN     I2C_DATA    ; get the returned data
+           134 : 4400;  -- 	RETURN
+           135 : 413D;  -- 	CALL   BlockI2C    ; wait for idle
+           136 : 0592;  -- 	LOAD   I2CWCmd     ; 0x1190 (write 1B, read 1B, addr 0x90)
+           137 : 4C90;  -- 	OUT    I2C_CMD     ; to I2C_CMD register
+           138 : 056C;  -- 	LOAD   Zero        ; 0x0000 (A/D port 0, no increment)
+           139 : 4C91;  -- 	OUT    I2C_DATA    ; to I2C_DATA register
+           13A : 4C92;  -- 	OUT    I2C_RDY     ; start the communication
+           13B : 413D;  -- 	CALL   BlockI2C    ; wait for it to finish
+           13C : 4400;  -- 	RETURN
+           13D : 056C;  -- 	LOAD   Zero
+           13E : 096A;  -- 	STORE  Temp        ; Used to check for timeout
+           13F : 056A;  -- 	LOAD   Temp
+           140 : 3401;  -- 	ADDI   1           ; this will result in ~0.1s timeout
+           141 : 096A;  -- 	STORE  Temp
+           142 : 2146;  -- 	JZERO  I2CError    ; Timeout occurred; error
+           143 : 4892;  -- 	IN     I2C_RDY     ; Read busy signal
+           144 : 1D3F;  -- 	JPOS   BI2CL       ; If not 0, try again
+           145 : 4400;  -- 	RETURN             ; Else return
+           146 : 056C;  -- 	LOAD   Zero
+           147 : 352C;  -- 	ADDI   &H12C       ; "I2C"
+           148 : 4C04;  -- 	OUT    SSEG1
+           149 : 4C05;  -- 	OUT    SSEG2       ; display error message
+           14A : 1546;  -- 	JUMP   I2CError
+           14B : 0960;  -- 	STORE  UARTTemp
+           14C : 3018;  -- 	SHIFT  -8
+           14D : 37E5;  -- 	ADDI   -27   ; escape character
+           14E : 2152;  -- 	JZERO  UEsc1
+           14F : 341B;  -- 	ADDI   27
+           150 : 4C98;  -- 	OUT    UART_DAT
+           151 : 1555;  -- 	JUMP   USend2
+           152 : 341B;  -- 	ADDI   27
+           153 : 4C98;  -- 	OUT    UART_DAT
+           154 : 4C98;  -- 	OUT    UART_DAT
+           155 : 0560;  -- 	LOAD   UARTTemp
+           156 : 2580;  -- 	AND    LowByte
+           157 : 37E5;  -- 	ADDI   -27   ; escape character
+           158 : 215C;  -- 	JZERO  UEsc2
+           159 : 341B;  -- 	ADDI   27
+           15A : 4C98;  -- 	OUT    UART_DAT
+           15B : 4400;  -- 	RETURN
+           15C : 341B;  -- 	ADDI   27
+           15D : 4C98;  -- 	OUT    UART_DAT
+           15E : 4C98;  -- 	OUT    UART_DAT
+           15F : 4400;  -- 	RETURN
+           160 : 0000;  -- 	UARTTemp: DW 0
+           161 : 0566;  -- 	LOAD   NL
+           162 : 4C98;  -- 	OUT    UART_DAT
+           163 : 3018;  -- 	SHIFT  -8
+           164 : 4C98;  -- 	OUT    UART_DAT
+           165 : 4400;  -- 	RETURN
+           166 : 0A1B;  -- 	NL: DW &H0A1B
+           167 : 4898;  -- 	IN     UART_DAT
+           168 : 1967;  -- 	JNEG   UARTClear
+           169 : 4400;  -- 	RETURN
+           16A : 0000;  -- Temp:     DW 0 ; "Temp" is not a great name, but can be useful
+           16B : FFFF;  -- NegOne:   DW -1
+           16C : 0000;  -- Zero:     DW 0
+           16D : 0001;  -- One:      DW 1
+           16E : 0002;  -- Two:      DW 2
+           16F : 0003;  -- Three:    DW 3
+           170 : 0004;  -- Four:     DW 4
+           171 : 0005;  -- Five:     DW 5
+           172 : 0006;  -- Six:      DW 6
+           173 : 0007;  -- Seven:    DW 7
+           174 : 0008;  -- Eight:    DW 8
+           175 : 0009;  -- Nine:     DW 9
+           176 : 000A;  -- Ten:      DW 10
+           177 : 0001;  -- Mask0:    DW &B00000001
+           178 : 0002;  -- Mask1:    DW &B00000010
+           179 : 0004;  -- Mask2:    DW &B00000100
+           17A : 0008;  -- Mask3:    DW &B00001000
+           17B : 0010;  -- Mask4:    DW &B00010000
+           17C : 0020;  -- Mask5:    DW &B00100000
+           17D : 0040;  -- Mask6:    DW &B01000000
+           17E : 0080;  -- Mask7:    DW &B10000000
+           17F : 8000;  -- MaskSign: DW &H8000
+           180 : 00FF;  -- LowByte:  DW &HFF      ; binary 00000000 1111111
+           181 : 000F;  -- LowNibl:  DW &HF       ; 0000 0000 0000 1111
+           182 : 03C1;  -- OneMeter: DW 961       ; ~1m in 1.05mm units
+           183 : 01E1;  -- HalfMeter: DW 481      ; ~0.5m in 1.05mm units
+           184 : 024A;  -- TwoFeet:  DW 586       ; ~2ft in 1.05mm units
+           185 : 0125;  -- OneFoot:  DW 293       ; 1 foot 
+           186 : 0013;  -- Twocm:    DW 19        ; there are ~ 19 robot units in twocm 
+           187 : 005A;  -- Deg90:    DW 90        ; 90 degrees in odometer units
+           188 : 00B4;  -- Deg180:   DW 180       ; 180
+           189 : 010E;  -- Deg270:   DW 270       ; 270
+           18A : 0168;  -- Deg360:   DW 360       ; can never actually happen; for math only
+           18B : 0064;  -- FSlow:    DW 100       ; 100 is about the lowest velocity value that will move
+           18C : FF9C;  -- RSlow:    DW -100
+           18D : 015E;  -- FMid:     DW 350       ; 350 is a medium speed
+           18E : FEA2;  -- RMid:     DW -350
+           18F : 01F4;  -- FFast:    DW 500       ; 500 is almost max speed (511 is max)
+           190 : FE0C;  -- RFast:    DW -500
+           191 : 0082;  -- MinBatt:  DW 130       ; 13.0V - minimum safe battery voltage
+           192 : 1190;  -- I2CWCmd:  DW &H1190    ; write one i2c byte, read one byte, addr 0x90
+           193 : 0190;  -- I2CRCmd:  DW &H0190    ; write nothing, read one byte, addr 0x90
+           194 : 0000;  -- X:        DW 0         ; change these to desired values before calling arctangent
+           195 : 0000;  -- Y:        DW 0
+           196 : 0000;  -- ANGLE:    DW 0         ; Angle that should be turned to
+           197 : 0000;  -- YBIG:     DW 0         ;
+           198 : 0000;  -- yoverx:   DW 0         ;initialize y/x to zero
+           199 : 0001;  -- signcheck:     DW 1         ;
+           19A : 0000;  -- right:    DW 0
+           19B : 0000;  -- left:     DW 0
+           19C : 0000;  -- sum:      DW 0         ;currently assuming X/Y are in centimeters
+           19D : 0000;  -- xtemp:    DW 0
+           19E : 0000;  -- ytemp:    DW 0
+           19F : 01B8;  -- slowdown: DW 440       ;this is where we should switch to fslow. 440 is ~1.5 feet, which is roughly 2/sqrt(2)
+           1A0 : 0000;  -- y1: DW 0
+           1A1 : 0000;  -- y2: DW 0
+           1A2 : 0000;  -- x1: DW 0
+           1A3 : 0000;  -- x2: DW 0
+           1A4 : 0000;  -- index:    DW 0         ; initalize the index to zero
+           1A5 : 0001;  -- quadrant:      DW 1         ; default quadrant is 1
+           1A6 : 0000;  -- DW  0
+           1A7 : 0007;  -- DW  7
+           1A8 : 000E;  -- DW  14
+           1A9 : 0015;  -- DW  21
+           1AA : 001B;  -- DW  27
+           1AB : 0020;  -- DW  32
+           1AC : 0025;  -- DW  37
+           1AD : 0029;  -- DW  41
+           1AE : 002D;  -- DW  45      ;this is entry 9
+  END;
