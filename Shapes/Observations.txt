@@ -1,0 +1,24 @@
+Robot Log
+Angles are in order of destination
+Triangle:
+
+2d 134 b4
+
+35 137 b4
+
+2c 13c b4
+
+2d 138  b1
+
+2c 138 b4 
+
+
+Star:
+
+2d 13c 80 135 66
+
+2c 134 a3 164 66
+
+2d 134 a6 162 c3
+
+2d 138 a2 163 bE
