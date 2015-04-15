@@ -53,21 +53,53 @@ WaitForUser:
 ;* Main code
 ;***************************************************************
 Main:
-	ADDI 50
+    ;First Destination (200,200)
+	ADDI 200
 	STORE X
 	STORE Y
 	CALL goto
+    IN THETA
+    OUT SSEG1
 	
+    ;Second Dest. (400, 0)
 	LOAD Zero
+	ADDI 400
+	STORE X
+	LOAD Zero
+	STORE Y
+	CALL goto
+	IN THETA
+	OUT SSEG1
+	
+	;Third Dest. (0, 100)
+	LOAD Zero
+	STORE X
 	ADDI 100
-	STORE X
-	LOAD Zero
 	STORE Y
 	CALL goto
+	IN THETA
+	OUT SSEG1
+	
+	;Fourth Dest. (400, 100)
+	LOAD Zero
+	ADDI 400
+	STORE X
+	ADDI -300
+	STORE Y
+	CALL goto
+	IN THETA
+	OUT SSEG1
+	
+	
+	;Go Home (0,0)
 	LOAD Zero
 	STORE X
 	STORE Y
 	CALL goto
+	IN THETA
+	OUT SSEG1
+	
+	
 	;LOAD Angle
 	;OUT SSEG2
 	;LOAD Zero
@@ -362,7 +394,7 @@ goto:
 	CALL turn
 	CALL WAIT1  ;wheels need to be stopped completely before the robot stops moving or it curves off
 	
-
+   
 
 	LOAD Zero
 	STORE temp   ;temp is initialized to zero (must be after atan and turn since they use it)  
