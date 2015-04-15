@@ -53,17 +53,17 @@ WaitForUser:
 ;* Main code
 ;***************************************************************
 Main:
-    ;First Destination (200,200)
-	ADDI 200
+    ;First Destination (100,100)
+	ADDI 100
 	STORE X
 	STORE Y
 	CALL goto
     IN THETA
     OUT SSEG1
 	
-    ;Second Dest. (400, 0)
+    ;Second Dest. (200, 0)
 	LOAD Zero
-	ADDI 400
+	ADDI 200
 	STORE X
 	LOAD Zero
 	STORE Y
@@ -71,20 +71,20 @@ Main:
 	IN THETA
 	OUT SSEG1
 	
-	;Third Dest. (0, 100)
+	;Third Dest. (0, 50)
 	LOAD Zero
 	STORE X
-	ADDI 100
+	ADDI 50
 	STORE Y
 	CALL goto
 	IN THETA
 	OUT SSEG1
 	
-	;Fourth Dest. (400, 100)
+	;Fourth Dest. (200, 50)
 	LOAD Zero
-	ADDI 400
+	ADDI 200
 	STORE X
-	ADDI -300
+	ADDI -150
 	STORE Y
 	CALL goto
 	IN THETA
