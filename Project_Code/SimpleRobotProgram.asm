@@ -539,7 +539,7 @@ stopmoving:            ;if we get here we know that the x coordinate is correct
 	RETURN
 	
 	
-Circle: LOAD ZERO ;Might not be necessary
+Circle:
 
 UI:		IN SWITCHES
 		AND MASK0
@@ -595,7 +595,9 @@ NEXT:	STORE RADIUS
 		LOAD OUTVEL
 		OUT RVELCMD
 		CALL Wait1
-
+        LOADI 0
+        STORE Temp
+        
 GO:		LOAD FSLOW
 		OUT LVELCMD
 		LOAD OUTVEL
@@ -603,8 +605,13 @@ GO:		LOAD FSLOW
 		IN THETA
 		OUT SSEG1
 		SUB INTHETA
-		JZERO STOP ; Move until it gets back to where it started
+		JZERO testtemp ; Move until it gets back to where it started
+		LOADI 1
+		STORE Temp
 		JUMP GO
+testtemp: 
+        LOAD Temp
+        JZERO GO
 		
 		
 STOP: 	LOAD ZERO		
