@@ -1,0 +1,118 @@
+;***************************************************************
+;* Turns code
+;***************************************************************
+
+LOAD ZERO
+ADDI 60
+STORE ANGLE
+CALL TURN
+ADDI 240
+STORE ANGLE 
+CALL TURN
+ADDI -110
+STORE ANGLE
+CALL TURN
+LOAD ZERO
+CALL TURN
+
+
+;***************************************************************
+;* Figure 8 code
+;***************************************************************\
+
+;;Figure 8 Code
+Figure8:
+    ;; First Dest. (0,0)
+    LOADI   45
+    STORE   ANGLE
+    CALL    turn
+    LOADI   50
+ 	STORE	X
+ 	STORE	Y
+ 	CALL	gotonoturn
+ 	
+ 	;;Second Dest (1,1)
+    LOADI   180
+ 	STORE   ANGLE
+ 	CALL    turn
+ 	LOAD    Zero
+ 	STORE   X
+ 	CALL    gotonoturn
+ 	
+ 	;;Third Dest (0,1)
+ 	LOADI   315
+ 	STORE   ANGLE
+ 	CALL    turn
+ 	LOAD    Zero
+ 	STORE   Y
+ 	ADDI    50
+ 	STORE   X
+ 	CALL    gotonoturn
+ 	
+ 	;; Fourth Dest (1,0)
+ 	
+ 	LOADI   180
+ 	STORE   ANGLE
+ 	CALL    turn
+ 	LOAD    Zero
+ 	STORE   X
+ 	CALL    gotonoturn
+
+;***************************************************************
+;* Star code
+;***************************************************************
+
+;First Destination (100,100)
+	ADDI 100
+	STORE X
+	STORE Y
+	CALL goto
+    IN THETA
+    OUT SSEG1
+	
+    ;Second Dest. (200, 0)
+	LOAD Zero
+	ADDI 200
+	STORE X
+	LOAD Zero
+	STORE Y
+	CALL goto
+	IN THETA
+	OUT SSEG1
+	
+	;Third Dest. (0, 50)
+	LOAD Zero
+	STORE X
+	ADDI 50
+	STORE Y
+	CALL goto
+	IN THETA
+	OUT SSEG1
+	
+	;Fourth Dest. (200, 50)
+	LOAD Zero
+	ADDI 200
+	STORE X
+	ADDI -150
+	STORE Y
+	CALL goto
+	IN THETA
+	OUT SSEG1
+	
+	
+	;Go Home (0,0)
+	LOAD Zero
+	STORE X
+	STORE Y
+	CALL goto
+	IN THETA
+	OUT SSEG1
+	CALL Die
+
+;***************************************************************
+;* Circle code
+;***************************************************************
+
+CALL Circle
+CALL Circle
+CAll DIE
