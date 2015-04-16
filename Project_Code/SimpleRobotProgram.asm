@@ -53,17 +53,82 @@ WaitForUser:
 ;* Main code
 ;***************************************************************
 Main:
-    ;First Destination (100,100)
-	ADDI 100
+
+;***************************************************************
+;* Turns code
+;***************************************************************
+
+LOADI 60
+STORE ANGLE
+CALL TURN
+LOADI 270
+STORE ANGLE 
+CALL TURN
+LOADI 170
+STORE ANGLE
+CALL TURN
+LOADI 0
+STORE ANGLE
+CALL TURN
+CALL HOLD
+
+;***************************************************************
+;* Figure 8 code
+;***************************************************************\
+
+;;Figure 8 Code
+Figure8:
+    ;; First Dest. (0,0)
+    LOADI   45
+    STORE   ANGLE
+    CALL    turn
+    LOADI   50
+ 	STORE	X
+ 	STORE	Y
+ 	CALL	gotonoturn
+ 	
+ 	;;Second Dest (1,1)
+    LOADI   180
+ 	STORE   ANGLE
+ 	CALL    turn
+ 	LOAD    Zero
+ 	STORE   X
+ 	CALL    gotonoturn
+ 	
+ 	;;Third Dest (0,1)
+ 	LOADI   315
+ 	STORE   ANGLE
+ 	CALL    turn
+ 	LOAD    Zero
+ 	STORE   Y
+ 	ADDI    50
+ 	STORE   X
+ 	CALL    gotonoturn
+ 	
+ 	;; Fourth Dest (1,0)
+ 	
+ 	LOADI   180
+ 	STORE   ANGLE
+ 	CALL    turn
+ 	LOAD    Zero
+ 	STORE   X
+ 	CALL    gotonoturn
+    CALL    HOLD
+;***************************************************************
+;* Star code
+;***************************************************************
+
+;First Destination (1,2)
+	LOADI 50
 	STORE X
+	LOADI 100
 	STORE Y
 	CALL goto
     IN THETA
     OUT SSEG1
 	
-    ;Second Dest. (200, 0)
-	LOAD Zero
-	ADDI 200
+    ;Second Dest. (1, 0)
+	LOADI 100
 	STORE X
 	LOAD Zero
 	STORE Y
@@ -71,7 +136,7 @@ Main:
 	IN THETA
 	OUT SSEG1
 	
-	;Third Dest. (0, 50)
+	;Third Dest. (0, 1)
 	LOAD Zero
 	STORE X
 	ADDI 50
@@ -80,11 +145,11 @@ Main:
 	IN THETA
 	OUT SSEG1
 	
-	;Fourth Dest. (200, 50)
+	;Fourth Dest. (2, 1)
 	LOAD Zero
-	ADDI 200
+	ADDI 100
 	STORE X
-	ADDI -150
+	ADDI -50
 	STORE Y
 	CALL goto
 	IN THETA
@@ -98,44 +163,16 @@ Main:
 	CALL goto
 	IN THETA
 	OUT SSEG1
-	
-	
-	;LOAD Angle
-	;OUT SSEG2
-	;LOAD Zero
-	;STORE X
-	;STORE Y
-	;CALL goto
-	;IN THETA
-	;OUT SSEG1
-	CALL Die
+	CALL HOLD
 
-Star:		;USING JUST 
+;***************************************************************
+;* Circle code
+;***************************************************************
 
-	LOAD	One
-	STORE	X
-	LOAD	Three
-	STORE	Y
-	CALL	goto
-	LOAD	Two
-	STORE 	X
-	LOAD	Zero
-	STORE	Y
-	CALL	goto
-	LOAD	Two
-	STORE	Y
-	LOAD	ZERO
-	ADDI	-1
-	STORE	X
-	CALL	goto
-	LOAD	Three
-	STORE	X
-	CALL	goto
-	LOAD	ZERO
-	STORE	X
-	STORE	Y
-	CALL	goto
-
+CALL Circle
+CALL HOLD
+CALL Circle
+;;CAll DIE
 	
 	
 Die:
@@ -365,12 +402,30 @@ CW:       ;wheel speeds if you're turning CW
 	STORE left
 	LOAD RSLOW
 	STORE right
-	JUMP turnloop
+	LOAD ANGLE
+	ADDI 4
+	STORE ANGLE
+	JUMP anglemod
 CCW:       ;wheel speeds for turning CCW
 	LOAD FSLOW
 	STORE right
 	LOAD RSLOW
 	STORE left
+	LOAD ANGLE
+	ADDI -4
+	STORE ANGLE
+
+anglemod: 
+    JPOS overcheck
+    ADD Deg360
+    STORE ANGLE
+    JUMP turnloop
+
+overcheck:
+    SUB Deg360
+    JNEG turnloop
+    STORE ANGLE
+
 turnloop:
 	LOAD right
 	OUT RVELCMD
@@ -385,6 +440,7 @@ at_angle:
     LOAD Zero
     OUT RVELCMD
     OUT LVELCMD
+    CALL WAIT1
 	RETURN
 
 
@@ -392,7 +448,8 @@ at_angle:
 goto:
 	CALL atan
 	CALL turn
-	CALL WAIT1  ;wheels need to be stopped completely before the robot stops moving or it curves off
+gotonoturn:
+
 	
    
 
@@ -479,7 +536,86 @@ stopmoving:            ;if we get here we know that the x coordinate is correct
 	OUT RVELCMD
 	OUT LVELCMD
 	RETURN
+	
+	
+Circle: LOAD ZERO ;Might not be necessary
 
+UI:		IN SWITCHES
+		AND MASK0
+		OUT LEDS
+		JPOS DISTANCE
+		IN SWITCHES
+		AND MASK1
+		OUT LEDS
+		JPOS DISTANCE2
+		IN SWITCHES
+		AND MASK2
+		OUT LEDS
+		JPOS DISTANCE3
+		IN SWITCHES
+		AND MASK3
+		OUT LEDS
+		JPOS DISTANCE4
+		JUMP UI    
+
+		;Distance needs to be Changed
+DISTANCE:  LOADI 10
+           MULT Twocm
+           SHIFT -1
+           JUMP NEXT
+DISTANCE2: LOADI 15 
+           MULT Twocm
+           SHIFT -1
+           JUMP NEXT
+DISTANCE3: LOADI 20
+           MULT Twocm
+           SHIFT -1
+           JUMP NEXT
+DISTANCE4: LOADI 25
+           MULT Twocm
+           SHIFT -1
+           JUMP NEXT
+			
+NEXT:	STORE RADIUS
+
+		LOAD FSLOW ;Load speed of inner wheel
+		MULT SCALE
+		DIV RADIUS ;Divide By a scaled version of the inner wheel speed
+		STORE Temp
+		LOAD RADIUS 
+		ADDI 240   ;Radius of the outer wheel's circle is radius + 240, distance between wheels
+		DIV SCALE
+		MULT Temp  ;  Velocity of inner wheel
+		STORE OUTVEL ;Increased velocity of outer wheel
+		IN THETA
+		STORE INTHETA
+		LOAD FSLOW
+		OUT LVELCMD
+		LOAD OUTVEL
+		OUT RVELCMD
+		CALL Wait1
+
+GO:		LOAD FSLOW
+		OUT LVELCMD
+		LOAD OUTVEL
+		OUT RVELCMD	
+		IN THETA
+		OUT SSEG1
+		SUB INTHETA
+		JZERO STOP ; Move until it gets back to where it started
+		JUMP GO
+		
+		
+STOP: 	LOAD ZERO		
+		OUT LVELCMD
+		OUT RVELCMD
+
+		
+HOLD:   CALL stopmoving
+        IN   SWITCHES
+        AND  MASK7
+        JZERO HOLD
+        RETURN
 
 ; Subroutine to wait (block) for 1 second
 Wait1:
@@ -747,6 +883,12 @@ YPOS:     EQU &HC1  ; Y-position
 THETA:    EQU &HC2  ; Current rotational position of robot (0-359)
 RESETPOS: EQU &HC3  ; write anything here to reset odometry to 0
 n:        EQU 64    ;n should be table length -1
+
+;Circle Variables
+RADIUS: DW 0
+OUTVEL: DW 0
+INTHETA: DW 0
+SCALE:  DW 256
 
 ;include table here
 offset:
