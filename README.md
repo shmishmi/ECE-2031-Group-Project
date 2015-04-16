@@ -12,7 +12,7 @@ __Assembly Code__
 * ~~Atan Subroutine~~
 * ~~Turn Subroutine~~
 * ~~Go to XY Subroutine~~
-* Star, Figure 8
+* ~~Star, Figure 8~~
 * Error Checking
 * Efficiency
 
