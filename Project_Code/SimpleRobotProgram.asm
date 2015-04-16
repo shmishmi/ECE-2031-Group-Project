@@ -113,7 +113,8 @@ Figure8:
  	LOAD    Zero
  	STORE   X
  	CALL    gotonoturn
-    CALL    HOLD
+        CALL    HOLD
+        ; Need code to reorient the robot
 ;***************************************************************
 ;* Star code
 ;***************************************************************
@@ -612,9 +613,9 @@ STOP: 	LOAD ZERO
 
 		
 HOLD:   CALL stopmoving
-        IN   SWITCHES
-        AND  MASK7
-        JZERO HOLD
+        IN   XIO         ; XIO contains KEYs
+	AND  Mask2       ; KEY3 mask (KEY0 is reset and can't be read)
+	JPOS HOLD
         RETURN
 
 ; Subroutine to wait (block) for 1 second
