@@ -44,7 +44,149 @@ WaitForUser:
 ;* Main code
 ;***************************************************************
 
+Main:
 
+;***************************************************************
+;* Turns code
+;***************************************************************
+
+LOADI 60
+STORE ANGLE
+CALL TURN
+LOADI 270
+STORE ANGLE 
+CALL TURN
+LOADI 170
+STORE ANGLE
+CALL TURN
+LOADI 0
+STORE ANGLE
+CALL TURN
+CALL HOLD
+
+;***************************************************************
+;* Figure 8 code
+;***************************************************************\
+
+;;Figure 8 Code
+Figure8:
+    ;; First Dest. (0,0)
+    LOADI   45
+    STORE   ANGLE
+    CALL    turn
+    LOADI   50
+ 	STORE	X
+ 	STORE	Y
+ 	CALL	gotonoturn
+ 	
+ 	;;Second Dest (1,1)
+    LOADI   180
+ 	STORE   ANGLE
+ 	CALL    turn
+ 	LOAD    Zero
+ 	STORE   X
+ 	CALL    gotonoturn
+ 	
+ 	;;Third Dest (0,1)
+ 	LOADI   315
+ 	STORE   ANGLE
+ 	CALL    turn
+ 	LOAD    Zero
+ 	STORE   Y
+ 	ADDI    50
+ 	STORE   X
+ 	CALL    gotonoturn
+ 	
+ 	;; Fourth Dest (1,0)
+ 	
+ 	LOADI   180
+ 	STORE   ANGLE
+ 	CALL    turn
+ 	LOAD    Zero
+ 	STORE   X
+ 	CALL    gotonoturn
+        CALL    HOLD
+        ; Need code to reorient the robot
+;***************************************************************
+;* Star code
+;***************************************************************
+
+;First Destination (1,2)
+	LOADI 50
+	STORE X
+	LOADI 100
+	STORE Y
+	CALL goto
+    IN THETA
+    OUT SSEG1
+	
+    ;Second Dest. (1, 0)
+	LOADI 100
+	STORE X
+	LOAD Zero
+	STORE Y
+	CALL goto
+	IN THETA
+	OUT SSEG1
+	
+	;Third Dest. (0, 1)
+	LOAD Zero
+	STORE X
+	ADDI 50
+	STORE Y
+	CALL goto
+	IN THETA
+	OUT SSEG1
+	
+	;Fourth Dest. (2, 1)
+	LOAD Zero
+	ADDI 100
+	STORE X
+	ADDI -50
+	STORE Y
+	CALL goto
+	IN THETA
+	OUT SSEG1
+	
+	
+	;Go Home (0,0)
+	LOAD Zero
+	STORE X
+	STORE Y
+	CALL goto
+	IN THETA
+	OUT SSEG1
+	CALL HOLD
+
+;***************************************************************
+;* Shapes call
+;***************************************************************	
+	CALL SHAPES
+
+;***************************************************************
+;* Circle code
+;***************************************************************
+
+CALL Circle
+CALL HOLD
+CALL Circle
+;;CAll DIE
+	
+	
+Die:
+; Sometimes it's useful to permanently stop execution.
+; This will also catch the execution if it accidentally
+; falls through from above.
+	LOAD   Zero         ; Stop everything.
+	OUT    LVELCMD
+	OUT    RVELCMD
+	OUT    SONAREN
+	LOAD   DEAD         ; An indication that we are dead
+	OUT    SSEG2
+Forever:
+	JUMP   Forever      ; Do this forever.
+	DEAD:  DW &HDEAD    ; Example of a "global variable"
+	
 ;***************************************************************
 ;* Arctangent implementation
 ;***************************************************************
@@ -249,6 +391,130 @@ cont:
 ;* Turn implementation
 ;***************************************************************
 
+turn:
+	IN THETA
+	SUB ANGLE	
+	JPOS CWorCCW
+	ADD Deg360  ;degrees for a CW turn
+CWorCCW:
+	SUB Deg180  
+	JPOS CCW  
+CW:       ;wheel speeds if you're turning CW
+	LOAD FSLOW
+	STORE left
+	LOAD RSLOW
+	STORE right
+	LOAD ANGLE
+	ADDI 4
+	STORE ANGLE
+	JUMP anglemod
+CCW:       ;wheel speeds for turning CCW
+	LOAD FSLOW
+	STORE right
+	LOAD RSLOW
+	STORE left
+	LOAD ANGLE
+	ADDI -4
+	STORE ANGLE
+
+anglemod: 
+    JPOS overcheck
+    ADD Deg360
+    STORE ANGLE
+    JUMP turnloop
+
+overcheck:
+    SUB Deg360
+    JNEG turnloop
+    STORE ANGLE
+
+turnloop:
+	LOAD right
+	OUT RVELCMD
+	LOAD left
+	OUT LVELCMD
+	IN THETA
+	OUT SSEG1
+	SUB ANGLE
+	JZERO at_angle
+	JUMP turnloop
+at_angle:
+    LOAD Zero
+    OUT RVELCMD
+    OUT LVELCMD
+    CALL WAIT1
+	RETURN
+
+;***************************************************************
+;* Shapes implementation
+;***************************************************************
+SHAPES:
+       IN SWITCHES
+       AND MASK1
+       JPOS Triangle
+
+       IN SWITCHES
+       AND MASK2
+       JPOS Rhombus
+
+IN SWITCHES
+AND MASK3
+JPOS Pentagon
+JUMP SHAPES
+
+Triangle: 
+
+LOADI -50
+STORE X
+LOADI -50
+STORE Y
+CALL goto
+LOADI -100
+STORE X
+LOAD ZERO
+STORE Y
+
+Rhombus:
+
+LOADI 10
+STORE X
+LOADI 100
+STORE Y
+CALL goto
+LOADI 110
+STORE X
+CALL goto
+LOAD ZERO
+STORE Y
+CALL goto
+LOAD ZERO
+STORE X
+CALL goto
+
+Pentagon: 
+
+LOADI -20
+STORE X
+LOADI 40
+STORE Y
+CALL goto
+LOADI 0
+STORE X
+LOADI 80
+STORE Y
+CALL goto
+LOADI 60
+STORE X
+LOADI 40
+STORE Y
+CALL goto
+LOADI 60
+STORE X
+LOADI 0
+STORE Y
+LOADI 0 
+STORE X
+CALL goto
 
 ;***************************************************************
 ;* Goto(x,y) implementation
@@ -257,7 +523,9 @@ cont:
 goto:
 	CALL atan
 	CALL turn
-	CALL WAIT1  ;wheels need to be stopped completely before the robot stops moving or it curves off
+	
+gotonoturn:
+
 	
    
 
@@ -282,7 +550,6 @@ goto:
 	STORE temp       ;use temp to indicate if xpos was bigger
 	
 	
-
 goloop:
 ;deceleration code - finding hypotenuse doesn't work because of overflow. 
 	; should test the other code without this, it hould work now
@@ -350,7 +617,8 @@ stopmoving:            ;if we get here we know that the x coordinate is correct
 ;* Circle implementation
 ;***************************************************************
 
-Circle: LOAD ZERO ;Might not be necessary
+	
+Circle:
 
 UI:		IN SWITCHES
 		AND MASK0
@@ -371,17 +639,21 @@ UI:		IN SWITCHES
 		JUMP UI    
 
 		;Distance needs to be Changed
-DISTANCE:  ADDI 50
+DISTANCE:  LOADI 10
            MULT Twocm
+           SHIFT -1
            JUMP NEXT
-DISTANCE2: ADDI 100 
+DISTANCE2: LOADI 15 
            MULT Twocm
+           SHIFT -1
            JUMP NEXT
-DISTANCE3: ADDI 200
+DISTANCE3: LOADI 20
            MULT Twocm
+           SHIFT -1
            JUMP NEXT
-DISTANCE4: ADDI 250
+DISTANCE4: LOADI 25
            MULT Twocm
+           SHIFT -1
            JUMP NEXT
 			
 NEXT:	STORE RADIUS
@@ -402,7 +674,9 @@ NEXT:	STORE RADIUS
 		LOAD OUTVEL
 		OUT RVELCMD
 		CALL Wait1
-
+        LOADI 0
+        STORE Temp
+        
 GO:		LOAD FSLOW
 		OUT LVELCMD
 		LOAD OUTVEL
@@ -410,15 +684,27 @@ GO:		LOAD FSLOW
 		IN THETA
 		OUT SSEG1
 		SUB INTHETA
-		JZERO STOP ; Move until it gets back to where it started
+		JZERO testtemp ; Move until it gets back to where it started
+		LOADI 1
+		STORE Temp
 		JUMP GO
+testtemp: 
+        LOAD Temp
+        JZERO GO
 		
 		
 STOP: 	LOAD ZERO		
 		OUT LVELCMD
-		OUT RVELCMD 
+		OUT RVELCMD
 		
-		
+;***************************************************************
+;* Hold Subroutine
+;***************************************************************
+		HOLD:   CALL stopmoving
+        IN   XIO         ; XIO contains KEYs
+	AND  Mask2       ; KEY3 mask (KEY0 is reset and can't be read)
+	JPOS HOLD
+        RETURN		
 
 ;***************************************************************
 ;* Various Given Subroutines
