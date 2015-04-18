@@ -441,9 +441,10 @@ turnloop:
 	JZERO at_angle
 	JUMP turnloop
 at_angle:
-    LOAD Zero
-    OUT RVELCMD
-    OUT LVELCMD
+        CALL stopmoving
+    ;LOAD Zero
+    ;OUT RVELCMD
+    ;OUT LVELCMD
     CALL WAIT1
 	RETURN
 
@@ -696,9 +697,6 @@ testtemp:
 		
 		
 STOP:   CALL stopmoving 	
-LOAD ZERO		
-		OUT LVELCMD
-		OUT RVELCMD
 		
 ;***************************************************************
 ;* Hold Subroutine
