@@ -170,7 +170,6 @@ Figure8:
 CALL Circle
 CALL HOLD
 CALL Circle
-;;CAll DIE
 	
 	
 Die:
@@ -696,9 +695,10 @@ testtemp:
         JZERO GO
 		
 		
-STOP: 	LOAD ZERO		
-		OUT LVELCMD
-		OUT RVELCMD
+STOP:   CALL stopmoving 	
+;LOAD ZERO		
+	;	OUT LVELCMD
+	;	OUT RVELCMD
 		
 ;***************************************************************
 ;* Hold Subroutine
