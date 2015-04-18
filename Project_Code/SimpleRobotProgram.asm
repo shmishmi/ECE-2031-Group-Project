@@ -155,7 +155,9 @@ star:
 ;***************************************************************
 ;* Circle code
 ;***************************************************************
-
+LOADI 180
+STORE ANGLE
+CALL turn
 CALL Circle
 CALL HOLD
 CALL Circle
@@ -380,7 +382,6 @@ qfour:
 	SUB TEMP
 
 done:
-	;OUT SSEG1
 	STORE ANGLE
 	RETURN
 cont:
@@ -450,8 +451,6 @@ goto:
 	CALL atan
 	CALL turn
 	
-	IN THETA
-    OUT SSEG1        ;test output code
     
     
 gotonoturn:
@@ -516,7 +515,7 @@ goloop:
 
     LOAD FSLOW            ;this puts slow to the wheels once you're 1-1.5 feet away from the destination
     OUT LVELCMD
-    ADDI 5                  ;adjusting for differences in wheel speeds
+    ;ADDI 5                  ;adjusting for differences in wheel speeds
     OUT RVELCMD
 	
     JUMP choosedirection
@@ -525,7 +524,7 @@ goloop:
 	LOAD FMID
 	
 	OUT LVELCMD
-	ADDI 5              ;adjusting for differences in wheel speeds
+	;ADDI 5              ;adjusting for differences in wheel speeds
     OUT RVELCMD
     choosedirection:
 	LOAD temp
@@ -578,19 +577,15 @@ Circle:
 
 UI:		IN SWITCHES
 		AND MASK0
-		OUT LEDS
 		JPOS DISTANCE
 		IN SWITCHES
 		AND MASK1
-		OUT LEDS
 		JPOS DISTANCE2
 		IN SWITCHES
 		AND MASK2
-		OUT LEDS
 		JPOS DISTANCE3
 		IN SWITCHES
 		AND MASK3
-		OUT LEDS
 		JPOS DISTANCE4
 		JUMP UI    
 
@@ -638,7 +633,7 @@ GO:		LOAD OUTVEL
 		LOAD FSLOW
 		OUT RVELCMD	
 		IN THETA
-		OUT SSEG1
+		OUT SSEG2
 		SUB INTHETA
 		JZERO testtemp ; Move until it gets back to where it started
 		LOADI 1
@@ -672,8 +667,6 @@ RETURN
 
 
 keepshapin:
-LOADI 2
-OUT SSEG1
 IN SWITCHES
 JZERO keepshapin
 AND MASK2
