@@ -239,6 +239,7 @@ STORE ytemp
     ;and go to quad 3 (because y is negative in quad 3).
     LOAD ytemp  
     JPOS quadx
+    JZERO quadx             
     LOAD Zero
     SUB ytemp
     STORE ytemp
@@ -307,6 +308,7 @@ indexloop:
 	
 	;interpolation
 	LOAD index
+	JZERO firstpoint        ;this takes care of the case when than angle is 0 deg
 	;SHIFT 5            ;this is scale / n , change the value accordingly
 	STORE x2
 	ADDI -1            ;use this value for delta x (this will change based on scale and n) 
@@ -335,9 +337,13 @@ indexloop:
 	MULT y2      ;using y2 so i don't have to use another memory location, this is just deltay
 	SHIFT -4   ;this is the same as dividing by delta x since in this case it is 16
 	ADD y1
+	
+	
+	firstpoint:           ;jump here if first point is 0 and just put zero in angle
 	STORE TEMP
 	
 	;end interpolation
+	
 	
 	
 	;Check if Y was bigger
