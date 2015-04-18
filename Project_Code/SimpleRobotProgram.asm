@@ -53,11 +53,11 @@ WaitForUser:
 ;* Main code
 ;***************************************************************
 Main:
-
+OUT RESETPOS
 ;***************************************************************
 ;* Turns code
 ;***************************************************************
-
+          ;test code
 LOADI 60
 STORE ANGLE
 CALL TURN
@@ -79,82 +79,69 @@ CALL HOLD
 ;;Figure 8 Code
 Figure8:
     ;; First Dest. (0,0)
-    LOADI   45
-    STORE   ANGLE
-    CALL    turn
-    LOADI   50
+    
+    ;;Second Dest (1,1)
+    LOADI   100
  	STORE	X
  	STORE	Y
- 	CALL	gotonoturn
+ 	CALL	goto
  	
- 	;;Second Dest (1,1)
-    LOADI   180
- 	STORE   ANGLE
- 	CALL    turn
+ 	
+  ;;Third Dest (0,1)
  	LOAD    Zero
  	STORE   X
- 	CALL    gotonoturn
+ 	CALL    goto
  	
- 	;;Third Dest (0,1)
- 	LOADI   315
- 	STORE   ANGLE
- 	CALL    turn
- 	LOAD    Zero
- 	STORE   Y
- 	ADDI    50
- 	STORE   X
- 	CALL    gotonoturn
  	
  	;; Fourth Dest (1,0)
+ 	LOAD    Zero
+ 	STORE   Y
+ 	ADDI    100
+ 	STORE   X
+ 	CALL    goto
  	
- 	LOADI   180
- 	STORE   ANGLE
- 	CALL    turn
+ 	
+ 	
+ 	
  	LOAD    Zero
  	STORE   X
- 	CALL    gotonoturn
+ 	CALL    goto
         CALL    HOLD
         ; Need code to reorient the robot
 ;***************************************************************
 ;* Star code
 ;***************************************************************
-
+star:
 ;First Destination (1,2)
 	LOADI 50
 	STORE X
-	LOADI 100
+	LOADI 150
 	STORE Y
 	CALL goto
-    IN THETA
-    OUT SSEG1
+    
 	
     ;Second Dest. (1, 0)
 	LOADI 100
 	STORE X
-	LOAD Zero
+	LOADI 0
 	STORE Y
 	CALL goto
-	IN THETA
-	OUT SSEG1
+
 	
 	;Third Dest. (0, 1)
-	LOAD Zero
+	LOADI -25
 	STORE X
-	ADDI 50
-	STORE Y
-	CALL goto
-	IN THETA
-	OUT SSEG1
-	
-	;Fourth Dest. (2, 1)
-	LOAD Zero
 	ADDI 100
-	STORE X
-	ADDI -50
 	STORE Y
 	CALL goto
-	IN THETA
-	OUT SSEG1
+
+	;Fourth Dest. (2, 1)
+	LOADI 125
+	STORE X
+	LOADI 100
+	STORE Y
+	CALL goto
+	
 	
 	
 	;Go Home (0,0)
@@ -162,8 +149,7 @@ Figure8:
 	STORE X
 	STORE Y
 	CALL goto
-	IN THETA
-	OUT SSEG1
+
 	CALL HOLD
 
 ;***************************************************************
@@ -173,6 +159,14 @@ Figure8:
 CALL Circle
 CALL HOLD
 CALL Circle
+
+
+LOADI 0
+STORE X
+STORE Y
+CALL goto
+
+CALL SHAPES
 ;;CAll DIE
 	
 	
@@ -439,7 +433,7 @@ turnloop:
 	LOAD left
 	OUT LVELCMD
 	IN THETA
-	OUT SSEG1
+	OUT SSEG2
 	SUB ANGLE
 	JZERO at_angle
 	JUMP turnloop
@@ -455,6 +449,11 @@ at_angle:
 goto:
 	CALL atan
 	CALL turn
+	
+	IN THETA
+    OUT SSEG1        ;test output code
+    
+    
 gotonoturn:
 
 	
@@ -462,7 +461,7 @@ gotonoturn:
 
 	LOAD Zero
 	STORE temp   ;temp is initialized to zero (must be after atan and turn since they use it)  
-
+    STORE y2
 	;for moving
 	LOAD X         ;convert to odometer units
 	MULT Twocm
@@ -473,15 +472,26 @@ gotonoturn:
 	MULT Twocm
 	SHIFT -1
 	STORE ytemp
-	
+
 	IN XPOS
 	SUB xtemp
-	JNEG goloop 
-	LOAD One
+	JNEG ydirection
+	LOADI 1
 	STORE temp       ;use temp to indicate if xpos was bigger
-	
-	
-
+ydirection:
+    IN YPOS
+    SUB ytemp
+    JNEG ybuffer
+    LOADI 1
+	STORE y2                   ;use y2 to indicate if y destination is bigger or not
+    LOAD ytemp
+    ADDI -15
+    JUMP storebuffer
+ybuffer: 
+LOAD ytemp
+ADDI 15
+storebuffer:
+STORE ytemp
 goloop:
 ;deceleration code - finding hypotenuse doesn't work because of overflow. 
 	; should test the other code without this, it hould work now
@@ -505,29 +515,48 @@ goloop:
     JPOS normalspeed
 
     LOAD FSLOW            ;this puts slow to the wheels once you're 1-1.5 feet away from the destination
+    OUT LVELCMD
+    ADDI 5                  ;adjusting for differences in wheel speeds
     OUT RVELCMD
-	OUT LVELCMD
+	
     JUMP choosedirection
 
     normalspeed:
 	LOAD FMID
-	OUT RVELCMD
+	
 	OUT LVELCMD
-
+	ADDI 5              ;adjusting for differences in wheel speeds
+    OUT RVELCMD
     choosedirection:
 	LOAD temp
-	JZERO destinationbigger
+	JZERO destinationbiggerx
 	
-	destinationsmaller:
+	destinationsmallerx:
 	IN XPOS
 	SUB xtemp
+	JPOS checky
+	JUMP stopmoving
+	
+	destinationbiggerx:
+	IN XPOS 
+	SUB xtemp
+	JNEG checky
+	JPOS stopmoving
+	
+checky:      
+    LOAD y2
+	JZERO destinationbiggery
+	
+	destinationsmallery:
+	IN YPOS
+	SUB ytemp
 	JPOS goloop
 	JUMP stopmoving
 	
-	destinationbigger:
-	IN XPOS 
-	SUB xtemp
-	JNEG goloop         
+	destinationbiggery:
+	IN YPOS 
+	SUB ytemp
+	JNEG goloop  
 	
 	;IN YPOS
 	;SUB ytemp
@@ -539,7 +568,7 @@ stopmoving:            ;if we get here we know that the x coordinate is correct
 	;LOAD ONE
 	;CALL Wait1
 	
-	LOAD Zero
+	LOADI 0
 	OUT RVELCMD
 	OUT LVELCMD
 	RETURN
@@ -570,15 +599,15 @@ DISTANCE:  LOADI 10
            MULT Twocm
            SHIFT -1
            JUMP NEXT
-DISTANCE2: LOADI 15 
+DISTANCE2: LOADI 13 
            MULT Twocm
            SHIFT -1
            JUMP NEXT
-DISTANCE3: LOADI 20
+DISTANCE3: LOADI 15
            MULT Twocm
            SHIFT -1
            JUMP NEXT
-DISTANCE4: LOADI 25
+DISTANCE4: LOADI 18
            MULT Twocm
            SHIFT -1
            JUMP NEXT
@@ -596,17 +625,17 @@ NEXT:	STORE RADIUS
 		STORE OUTVEL ;Increased velocity of outer wheel
 		IN THETA
 		STORE INTHETA
-		LOAD FSLOW
-		OUT LVELCMD
 		LOAD OUTVEL
+		OUT LVELCMD
+		LOAD FSLOW
 		OUT RVELCMD
 		CALL Wait1
         LOADI 0
         STORE Temp
         
-GO:		LOAD FSLOW
+GO:		LOAD OUTVEL
 		OUT LVELCMD
-		LOAD OUTVEL
+		LOAD FSLOW
 		OUT RVELCMD	
 		IN THETA
 		OUT SSEG1
@@ -627,9 +656,116 @@ STOP: 	LOAD ZERO
 		
 HOLD:   CALL stopmoving
         IN   XIO         ; XIO contains KEYs
-	AND  Mask2       ; KEY3 mask (KEY0 is reset and can't be read)
+	AND  Mask1       ; KEY3 mask (KEY0 is reset and can't be read)
 	JPOS HOLD
         RETURN
+        
+SHAPES:
+IN XIO
+AND MASK1
+JZERO keepshapin
+
+IN XIO
+AND MASK0
+JPOS SHAPES
+RETURN
+
+
+keepshapin:
+LOADI 2
+OUT SSEG1
+IN SWITCHES
+JZERO keepshapin
+AND MASK2
+JPOS Triangle
+
+IN SWITCHES
+AND MASK3
+JPOS Rhombus
+
+IN SWITCHES
+AND MASK4
+JPOS Pentagon
+JUMP SHAPES
+
+Triangle: 
+
+LOADI -50
+STORE X
+STORE Y
+CALL goto
+
+LOADI -100
+STORE X
+LOADI 0
+STORE Y
+CALL goto
+LOADI 0
+STORE X
+STORE Y
+CALL goto
+JUMP SHAPES
+
+Rhombus:
+
+LOADI 10
+STORE X
+LOADI 100
+STORE Y
+CALL goto
+LOADI 110
+STORE X
+CALL goto
+LOADI 100
+STORE X
+LOAD ZERO
+STORE Y
+CALL goto
+LOAD ZERO
+STORE X
+STORE Y
+CALL goto
+JUMP turn0
+
+Pentagon: 
+
+LOADI -20
+STORE X
+LOADI 40
+STORE Y
+CALL goto
+LOADI 0
+STORE X
+LOADI 80
+STORE Y
+CALL goto
+LOADI 40
+STORE X
+LOADI 80
+STORE Y
+CALL goto
+LOADI 60
+STORE X
+LOADI 40
+STORE Y
+CALL goto
+LOADI 40
+STORE X
+LOADI 0
+STORE Y
+CALL goto
+LOADI 0 
+STORE X
+STORE Y
+CALL goto
+JUMP turn0
+
+turn0:
+LOADI 0
+STORE ANGLE
+CALL turn
+JUMP SHAPES
+
 
 ; Subroutine to wait (block) for 1 second
 Wait1:
@@ -823,7 +959,7 @@ Deg270:   DW 270       ; 270
 Deg360:   DW 360       ; can never actually happen; for math only
 FSlow:    DW 100       ; 100 is about the lowest velocity value that will move
 RSlow:    DW -100
-FMid:     DW 350       ; 350 is a medium speed
+FMid:     DW 350       ; 350 is a medium speed    
 RMid:     DW -350
 FFast:    DW 500       ; 500 is almost max speed (511 is max)
 RFast:    DW -500
