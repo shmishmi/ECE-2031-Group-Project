@@ -696,9 +696,9 @@ testtemp:
 		
 		
 STOP:   CALL stopmoving 	
-;LOAD ZERO		
-	;	OUT LVELCMD
-	;	OUT RVELCMD
+LOAD ZERO		
+		OUT LVELCMD
+		OUT RVELCMD
 		
 ;***************************************************************
 ;* Hold Subroutine
