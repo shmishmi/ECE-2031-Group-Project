@@ -889,7 +889,7 @@ Mask2:    DW &B00000100
 Mask3:    DW &B00001000
 Mask4:    DW &B00010000
 
-These aren't being used so comment them out
+;These aren't being used so comment them out
 ;Mask5:    DW &B00100000
 ;Mask6:    DW &B01000000
 ;Mask7:    DW &B10000000
