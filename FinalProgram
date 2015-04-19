@@ -1,3 +1,9 @@
+; FinalCode.asm
+; Created by Team Donut
+; 
+
+
+
 ORG        &H000       ;Begin program at x000
 ;***************************************************************
 ;* Initialization
@@ -43,13 +49,13 @@ WaitForUser:
 ;***************************************************************
 ;* Main code
 ;***************************************************************
-
 Main:
+OUT RESETPOS
 
 ;***************************************************************
 ;* Turns code
 ;***************************************************************
-
+      
 LOADI 60
 STORE ANGLE
 CALL TURN
@@ -70,83 +76,71 @@ CALL HOLD
 
 ;;Figure 8 Code
 Figure8:
-    ;; First Dest. (0,0)
-    LOADI   45
-    STORE   ANGLE
-    CALL    turn
-    LOADI   50
+    ;; Starts at (0,0)
+    
+    ;;First Dest (100,100)
+    LOADI   100
  	STORE	X
  	STORE	Y
- 	CALL	gotonoturn
+ 	CALL	goto
  	
- 	;;Second Dest (1,1)
-    LOADI   180
- 	STORE   ANGLE
- 	CALL    turn
+ 	
+  ;;Second Dest (0,100)
  	LOAD    Zero
  	STORE   X
- 	CALL    gotonoturn
+ 	CALL    goto
  	
- 	;;Third Dest (0,1)
- 	LOADI   315
- 	STORE   ANGLE
- 	CALL    turn
- 	LOAD    Zero
+ 	
+ 	;; Third Dest (100,0)
+ 	LOADI   0
  	STORE   Y
- 	ADDI    50
+ 	ADDI    100
  	STORE   X
- 	CALL    gotonoturn
+ 	CALL    goto
  	
- 	;; Fourth Dest (1,0)
  	
- 	LOADI   180
- 	STORE   ANGLE
- 	CALL    turn
- 	LOAD    Zero
+ 	
+ 	;; Fourth Dest (0,0)
+ 	LOADI   0
  	STORE   X
- 	CALL    gotonoturn
-        CALL    HOLD
+ 	CALL    goto
+
+    CALL    HOLD
         ; Need code to reorient the robot
 ;***************************************************************
 ;* Star code
 ;***************************************************************
-
+star:
 ;First Destination (1,2)
 	LOADI 50
 	STORE X
-	LOADI 100
+	LOADI 150
 	STORE Y
 	CALL goto
-    IN THETA
-    OUT SSEG1
+    
 	
     ;Second Dest. (1, 0)
 	LOADI 100
 	STORE X
-	LOAD Zero
+	LOADI 0
 	STORE Y
 	CALL goto
-	IN THETA
-	OUT SSEG1
+
 	
 	;Third Dest. (0, 1)
-	LOAD Zero
+	LOADI -25
 	STORE X
-	ADDI 50
-	STORE Y
-	CALL goto
-	IN THETA
-	OUT SSEG1
-	
-	;Fourth Dest. (2, 1)
-	LOAD Zero
 	ADDI 100
-	STORE X
-	ADDI -50
 	STORE Y
 	CALL goto
-	IN THETA
-	OUT SSEG1
+
+	;Fourth Dest. (2, 1)
+	LOADI 125
+	STORE X
+	LOADI 100
+	STORE Y
+	CALL goto
+	
 	
 	
 	;Go Home (0,0)
@@ -154,22 +148,36 @@ Figure8:
 	STORE X
 	STORE Y
 	CALL goto
-	IN THETA
-	OUT SSEG1
-	CALL HOLD
 
-;***************************************************************
-;* Shapes call
-;***************************************************************	
-	CALL SHAPES
+	CALL HOLD
 
 ;***************************************************************
 ;* Circle code
 ;***************************************************************
+;this orients the robot the way we want it for the circle (no smacking into the wall)
+LOADI 180        
+STORE ANGLE
+CALL turn
 
+;show a couple circles
 CALL Circle
 CALL HOLD
 CALL Circle
+
+
+;***************************************************************
+;* Shapes code
+;***************************************************************
+
+
+;make sure it gets back to 0,0 if it's a little off (circle overshoot)
+LOADI 0
+STORE X
+STORE Y
+CALL goto
+
+CALL SHAPES
+
 	
 	
 Die:
@@ -185,15 +193,16 @@ Die:
 Forever:
 	JUMP   Forever      ; Do this forever.
 	DEAD:  DW &HDEAD    ; Example of a "global variable"
+
 	
 ;***************************************************************
-;* Arctangent implementation
+;* Subroutines
 ;***************************************************************
-
 atan:
 ;initialize variables (for repeated calls)
-    LOAD Zero
+    LOADI -1
     STORE INDEX
+    ADDI 1
     STORE YBIG
     ADDI 1
     STORE quadrant
@@ -218,7 +227,7 @@ LOAD Y
 SUB temp
 STORE ytemp
 
-;this isn't necessary once the relative position thing is working (should be working now)
+;this is if you don't want to use relative position
 ;LOAD Y 
 ;STORE ytemp
 ;LOAD X 
@@ -226,38 +235,40 @@ STORE ytemp
 
 
 ;find quadrant
-    ;Reset Sign Check
     LOAD MaskSign 
-    AND  ytemp ; Get sign bit of y
+    AND  ytemp         ;Get sign bit of y
     STORE signcheck
-    ;If y is positive go to x
-    ;If y is negative take abs. value,
-    ;and go to quad 3 (because y is negative in quad 3).
+
+    ;If y is positive or zero go to x
+    
+    
     LOAD ytemp  
     JPOS quadx
-    JZERO quadx
-    LOAD Zero
-    SUB ytemp
+    JZERO quadx  
+
+    ;If y is negative take abs. value,and go to quad 3 (because y is negative in quad 3).          
+    MULT NegOne
     STORE ytemp
-    LOAD Three
+    LOADI 3
     STORE quadrant
 
 quadx:
     LOAD xtemp
     AND MaskSign ;Get sign of x
-    XOR signcheck ;Check to see if sign of y and x are the same
+    XOR signcheck ;Check to see if sign of y and x are the same sign
     ;Figure out quadrant
     JZERO checkx ; x and y are both the same sign
-    LOAD One ; different signs add one to quadrant
+   
+    LOADI 1 ; different signs add one to quadrant
     ADD quadrant 
     STORE quadrant
-;Make x positive if not already
-;Needed for actual function
+
+
+;Make x positive if not already, needed for actual function
 checkx:
 	LOAD xtemp
 	JPOS compxy
-	LOAD ZERO
-	SUB xtemp
+	MULT NegOne
 	STORE xtemp
 
 ;switch x and y if y is bigger
@@ -267,8 +278,8 @@ compxy:
 	SUB xtemp
 	
 	JNEG findindex ;If x is bigger move to atan subroutine
-	;Switch X and Y if Y is bigger
-	;Need for 90 - atan(x/y)
+	
+	;Switch X and Y if Y is bigger need for 90 - atan(x/y)
 	LOAD One
 	STORE YBIG
 	LOAD xtemp
@@ -285,8 +296,12 @@ findindex:
 	STORE yoverx   ;yoverx = floor(y*2^7/x)
 ;from division scaled up by 2^7, find table index 
 ;gets the value at the index
-	load index
 	
+cont:
+	LOAD index
+	ADDI 1
+	STORE index
+
 indexloop: 
 	;scale by 2048
 	SHIFT 4   ;shift 4 is multiply by scale (2^7) and divide by n-1 (8)
@@ -296,16 +311,16 @@ indexloop:
 	JNEG cont
 	
 	;if index is bigger then we've gone far enough
+
 	;LOAD index   ;normal code, not needed if interpolation is being used
 	;ADDI offset
 	;STORE index
 	;ILOAD index
 	;STORE TEMP
 	
-	;interpolation
+	;interpolation code
 	LOAD index
-	JZERO firstpoint
-	;SHIFT 5            ;this is scale / n , change the value accordingly
+	JZERO firstpoint        ;this takes care of the case when than angle is 0 deg
 	STORE x2
 	ADDI -1            ;use this value for delta x (this will change based on scale and n) 
 	STORE x1
@@ -330,13 +345,16 @@ indexloop:
 	
 	LOAD yoverx
 	SUB x1
-	MULT y2      ;using y2 so i don't have to use another memory location, this is just deltay
+	MULT y2      ;using y2 as delta y
 	SHIFT -4   ;this is the same as dividing by delta x since in this case it is 16
 	ADD y1
-firstpoint:
+	
+	
+	firstpoint:           ;jump here if first point is 0 and just put zero in angle
 	STORE TEMP
 	
 	;end interpolation
+	
 	
 	
 	;Check if Y was bigger
@@ -379,19 +397,10 @@ qfour:
 	SUB TEMP
 
 done:
-	;OUT SSEG1
 	STORE ANGLE
 	RETURN
-cont:
-	LOAD index
-	ADDI 1
-	STORE index
-	JUMP indexloop
-	;end atan
 
-;***************************************************************
-;* Turn implementation
-;***************************************************************
+	;end atan
 
 turn:
 	IN THETA
@@ -407,7 +416,7 @@ CW:       ;wheel speeds if you're turning CW
 	LOAD RSLOW
 	STORE right
 	LOAD ANGLE
-	ADDI 4
+	ADDI 4          ;adjustment for turning overshoot
 	STORE ANGLE
 	JUMP anglemod
 CCW:       ;wheel speeds for turning CCW
@@ -416,7 +425,7 @@ CCW:       ;wheel speeds for turning CCW
 	LOAD RSLOW
 	STORE left
 	LOAD ANGLE
-	ADDI -4
+	ADDI -4        ;adjustment for turning overshoot
 	STORE ANGLE
 
 anglemod: 
@@ -436,105 +445,28 @@ turnloop:
 	LOAD left
 	OUT LVELCMD
 	IN THETA
-	OUT SSEG1
+	OUT SSEG2
 	SUB ANGLE
 	JZERO at_angle
 	JUMP turnloop
 at_angle:
-        CALL stopmoving
-    ;LOAD Zero
-    ;OUT RVELCMD
-    ;OUT LVELCMD
+    LOAD Zero
+    OUT RVELCMD
+    OUT LVELCMD
     CALL WAIT1
 	RETURN
 
-;***************************************************************
-;* Shapes implementation
-;***************************************************************
-SHAPES:
-       IN SWITCHES
-       AND MASK1
-       JPOS Triangle
 
-       IN SWITCHES
-       AND MASK2
-       JPOS Rhombus
-
-IN SWITCHES
-AND MASK3
-JPOS Pentagon
-JUMP SHAPES
-
-Triangle: 
-
-LOADI -50
-STORE X
-LOADI -50
-STORE Y
-CALL goto
-LOADI -100
-STORE X
-LOAD ZERO
-STORE Y
-
-Rhombus:
-
-LOADI 10
-STORE X
-LOADI 100
-STORE Y
-CALL goto
-LOADI 110
-STORE X
-CALL goto
-LOAD ZERO
-STORE Y
-CALL goto
-LOAD ZERO
-STORE X
-CALL goto
-
-Pentagon: 
-
-LOADI -20
-STORE X
-LOADI 40
-STORE Y
-CALL goto
-LOADI 0
-STORE X
-LOADI 80
-STORE Y
-CALL goto
-LOADI 60
-STORE X
-LOADI 40
-STORE Y
-CALL goto
-LOADI 60
-STORE X
-LOADI 0
-STORE Y
-LOADI 0 
-STORE X
-CALL goto
-
-;***************************************************************
-;* Goto(x,y) implementation
-;***************************************************************
 
 goto:
 	CALL atan
 	CALL turn
 	
-gotonoturn:
-
-	
-   
+     
 
 	LOAD Zero
 	STORE temp   ;temp is initialized to zero (must be after atan and turn since they use it)  
-
+    STORE y2
 	;for moving
 	LOAD X         ;convert to odometer units
 	MULT Twocm
@@ -545,14 +477,26 @@ gotonoturn:
 	MULT Twocm
 	SHIFT -1
 	STORE ytemp
-	
+
 	IN XPOS
 	SUB xtemp
-	JNEG goloop 
-	LOAD One
+	JNEG ydirection
+	LOADI 1
 	STORE temp       ;use temp to indicate if xpos was bigger
-	
-	
+ydirection:
+    IN YPOS
+    SUB ytemp
+    JNEG ybuffer
+    LOADI 1
+	STORE y2                   ;use y2 to indicate if y destination is bigger or not
+    LOAD ytemp
+    ADDI -15
+    JUMP storebuffer
+ybuffer: 
+LOAD ytemp
+ADDI 15
+storebuffer:
+STORE ytemp
 goloop:
 ;deceleration code - finding hypotenuse doesn't work because of overflow. 
 	; should test the other code without this, it hould work now
@@ -576,29 +520,48 @@ goloop:
     JPOS normalspeed
 
     LOAD FSLOW            ;this puts slow to the wheels once you're 1-1.5 feet away from the destination
+    OUT LVELCMD
+    ;ADDI 5                  ;adjusting for differences in wheel speeds
     OUT RVELCMD
-	OUT LVELCMD
+	
     JUMP choosedirection
 
     normalspeed:
 	LOAD FMID
-	OUT RVELCMD
+	
 	OUT LVELCMD
-
+	;ADDI 5              ;adjusting for differences in wheel speeds
+    OUT RVELCMD
     choosedirection:
 	LOAD temp
-	JZERO destinationbigger
+	JZERO destinationbiggerx
 	
-	destinationsmaller:
+	destinationsmallerx:
 	IN XPOS
 	SUB xtemp
+	JPOS checky
+	JUMP stopmoving
+	
+	destinationbiggerx:
+	IN XPOS 
+	SUB xtemp
+	JNEG checky
+	JPOS stopmoving
+	
+checky:      
+    LOAD y2
+	JZERO destinationbiggery
+	
+	destinationsmallery:
+	IN YPOS
+	SUB ytemp
 	JPOS goloop
 	JUMP stopmoving
 	
-	destinationbigger:
-	IN XPOS 
-	SUB xtemp
-	JNEG goloop         
+	destinationbiggery:
+	IN YPOS 
+	SUB ytemp
+	JNEG goloop  
 	
 	;IN YPOS
 	;SUB ytemp
@@ -610,34 +573,25 @@ stopmoving:            ;if we get here we know that the x coordinate is correct
 	;LOAD ONE
 	;CALL Wait1
 	
-	LOAD Zero
+	LOADI 0
 	OUT RVELCMD
 	OUT LVELCMD
 	RETURN
 	
 	
-;***************************************************************
-;* Circle implementation
-;***************************************************************
-
-	
 Circle:
 
 UI:		IN SWITCHES
 		AND MASK0
-		OUT LEDS
 		JPOS DISTANCE
 		IN SWITCHES
 		AND MASK1
-		OUT LEDS
 		JPOS DISTANCE2
 		IN SWITCHES
 		AND MASK2
-		OUT LEDS
 		JPOS DISTANCE3
 		IN SWITCHES
 		AND MASK3
-		OUT LEDS
 		JPOS DISTANCE4
 		JUMP UI    
 
@@ -646,15 +600,15 @@ DISTANCE:  LOADI 10
            MULT Twocm
            SHIFT -1
            JUMP NEXT
-DISTANCE2: LOADI 15 
+DISTANCE2: LOADI 13 
            MULT Twocm
            SHIFT -1
            JUMP NEXT
-DISTANCE3: LOADI 20
+DISTANCE3: LOADI 15
            MULT Twocm
            SHIFT -1
            JUMP NEXT
-DISTANCE4: LOADI 25
+DISTANCE4: LOADI 18
            MULT Twocm
            SHIFT -1
            JUMP NEXT
@@ -672,20 +626,20 @@ NEXT:	STORE RADIUS
 		STORE OUTVEL ;Increased velocity of outer wheel
 		IN THETA
 		STORE INTHETA
-		LOAD FSLOW
-		OUT LVELCMD
 		LOAD OUTVEL
+		OUT LVELCMD
+		LOAD FSLOW
 		OUT RVELCMD
 		CALL Wait1
         LOADI 0
         STORE Temp
         
-GO:		LOAD FSLOW
+GO:		LOAD OUTVEL
 		OUT LVELCMD
-		LOAD OUTVEL
+		LOAD FSLOW
 		OUT RVELCMD	
 		IN THETA
-		OUT SSEG1
+		OUT SSEG2
 		SUB INTHETA
 		JZERO testtemp ; Move until it gets back to where it started
 		LOADI 1
@@ -696,20 +650,121 @@ testtemp:
         JZERO GO
 		
 		
-STOP:   CALL stopmoving 	
-		
-;***************************************************************
-;* Hold Subroutine
-;***************************************************************
-		HOLD:   CALL stopmoving
-        IN   XIO         ; XIO contains KEYs
-	AND  Mask2       ; KEY3 mask (KEY0 is reset and can't be read)
-	JPOS HOLD
-        RETURN		
+STOP: 	LOAD ZERO		
+		OUT LVELCMD
+		OUT RVELCMD
 
-;***************************************************************
-;* Various Given Subroutines
-;***************************************************************
+;wait for keypress
+HOLD:   CALL stopmoving
+        IN   XIO         ; XIO contains KEYs
+	AND  Mask1       ; KEY3 mask (KEY0 is reset and can't be read)
+	JPOS HOLD
+        RETURN
+;some example shapes that are selected via switch input     
+SHAPES:
+IN XIO
+AND MASK1
+JZERO keepshapin
+
+IN XIO
+AND MASK0
+JPOS SHAPES
+RETURN
+
+
+keepshapin:
+IN SWITCHES
+JZERO keepshapin
+AND MASK2
+JPOS Triangle
+
+IN SWITCHES
+AND MASK3
+JPOS Rhombus
+
+IN SWITCHES
+AND MASK4
+JPOS Pentagon
+JUMP SHAPES
+
+Triangle: 
+
+LOADI -50
+STORE X
+STORE Y
+CALL goto
+
+LOADI -100
+STORE X
+LOADI 0
+STORE Y
+CALL goto
+LOADI 0
+STORE X
+STORE Y
+CALL goto
+JUMP SHAPES
+
+Rhombus:
+
+LOADI 10
+STORE X
+LOADI 100
+STORE Y
+CALL goto
+LOADI 110
+STORE X
+CALL goto
+LOADI 100
+STORE X
+LOAD ZERO
+STORE Y
+CALL goto
+LOAD ZERO
+STORE X
+STORE Y
+CALL goto
+JUMP turn0
+
+Pentagon: 
+
+LOADI -20
+STORE X
+LOADI 40
+STORE Y
+CALL goto
+LOADI 0
+STORE X
+LOADI 80
+STORE Y
+CALL goto
+LOADI 40
+STORE X
+LOADI 80
+STORE Y
+CALL goto
+LOADI 60
+STORE X
+LOADI 40
+STORE Y
+CALL goto
+LOADI 40
+STORE X
+LOADI 0
+STORE Y
+CALL goto
+LOADI 0 
+STORE X
+STORE Y
+CALL goto
+JUMP turn0
+
+turn0:
+LOADI 0
+STORE ANGLE
+CALL turn
+JUMP SHAPES
+
 
 ; Subroutine to wait (block) for 1 second
 Wait1:
@@ -806,7 +861,53 @@ I2CError:
 	OUT    SSEG2       ; display error message
 	JUMP   I2CError
 
+; Subroutine to send AC value through the UART,
+; formatted for default base station code:
+; [ AC(15..8) | AC(7..0)]
+; Note that special characters such as \lf are
+; escaped with the value 0x1B, thus the literal
+; value 0x1B must be sent as 0x1B1B, should it occur.
+UARTSend:
+	STORE  UARTTemp
+	SHIFT  -8
+	ADDI   -27   ; escape character
+	JZERO  UEsc1
+	ADDI   27
+	OUT    UART_DAT
+	JUMP   USend2
+UEsc1:
+	ADDI   27
+	OUT    UART_DAT
+	OUT    UART_DAT
+USend2:
+	LOAD   UARTTemp
+	AND    LowByte
+	ADDI   -27   ; escape character
+	JZERO  UEsc2
+	ADDI   27
+	OUT    UART_DAT
+	RETURN
+UEsc2:
+	ADDI   27
+	OUT    UART_DAT
+	OUT    UART_DAT
+	RETURN
+	UARTTemp: DW 0
 
+; Subroutine to send a newline to the computer log
+UARTNL:
+	LOAD   NL
+	OUT    UART_DAT
+	SHIFT  -8
+	OUT    UART_DAT
+	RETURN
+	NL: DW &H0A1B
+
+; Subroutine to clear the internal UART receive FIFO.
+UARTClear:
+	IN     UART_DAT
+	JNEG   UARTClear
+	RETURN
 ;***************************************************************
 ;* Variables
 ;***************************************************************
@@ -857,7 +958,7 @@ Deg270:   DW 270       ; 270
 Deg360:   DW 360       ; can never actually happen; for math only
 FSlow:    DW 100       ; 100 is about the lowest velocity value that will move
 RSlow:    DW -100
-FMid:     DW 350       ; 350 is a medium speed
+FMid:     DW 350       ; 350 is a medium speed    
 RMid:     DW -350
 FFast:    DW 500       ; 500 is almost max speed (511 is max)
 RFast:    DW -500
